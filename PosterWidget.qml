@@ -20,6 +20,7 @@ Item {
     // User customized image path and shape index
     property string imagePath: ""
     property int shapeIndex: 0
+    property bool showContextMenu: false
 
     // ─── Settings Persistence ───
     Process {
@@ -76,13 +77,11 @@ Item {
         loadSettingsProc.running = true
     }
 
-    // ─── Shape Definition & Drawing Functions ───
+    // ─── Only Smooth / Curved Shapes ───
     property var shapeNames: [
-        "circle", "squircle", "stadium_h", "arch", "triangle_up",
-        "semicircle_top", "ellipse", "pebble", "diamond", "pillow",
-        "pentagon", "hexagon", "gear_12", "star_8", "flower_4",
-        "scallop_8", "octagon", "star_12", "clover_4", "decagon",
-        "star_16", "gear_16", "oval_small", "rhombus", "badge_4",
+        "circle", "squircle", "stadium_h", "arch",
+        "semicircle_top", "ellipse", "pebble", "pillow",
+        "flower_4", "scallop_8", "clover_4", "badge_4",
         "pill_v", "heart"
     ]
 
@@ -120,10 +119,6 @@ Item {
             ctx.lineTo(cx + r, cy)
             ctx.arc(cx, cy, r, 0, Math.PI, true)
             ctx.lineTo(cx - r, cy + r)
-        } else if (shapeType === "triangle_up") {
-            ctx.moveTo(cx, cy - r)
-            ctx.lineTo(cx + r * 0.95, cy + r * 0.85)
-            ctx.lineTo(cx - r * 0.95, cy + r * 0.85)
         } else if (shapeType === "semicircle_top") {
             ctx.moveTo(cx - r, cy + r * 0.3)
             ctx.arc(cx, cy + r * 0.3, r, Math.PI, 0, false)
@@ -135,32 +130,14 @@ Item {
             ctx.bezierCurveTo(cx - r, cy - r, cx + r * 0.2, cy - r, cx + r * 0.9, cy - r * 0.4)
             ctx.bezierCurveTo(cx + r * 1.1, cy, cx + r * 0.8, cy + r * 0.9, cx, cy + r)
             ctx.bezierCurveTo(cx - r * 0.9, cy + r * 0.9, cx - r * 1.1, cy, cx - r * 0.8, cy - r * 0.5)
-        } else if (shapeType === "diamond") {
-            ctx.moveTo(cx, cy - r)
-            ctx.lineTo(cx + r, cy)
-            ctx.lineTo(cx, cy + r)
-            ctx.lineTo(cx - r, cy)
         } else if (shapeType === "pillow") {
             ctx.moveTo(cx, cy - r)
             ctx.quadraticCurveTo(cx + r * 0.8, cy - r * 0.8, cx + r, cy)
             ctx.quadraticCurveTo(cx + r * 0.8, cy + r * 0.8, cx, cy + r)
             ctx.quadraticCurveTo(cx - r * 0.8, cy + r * 0.8, cx - r, cy)
             ctx.quadraticCurveTo(cx - r * 0.8, cy - r * 0.8, cx, cy - r)
-        } else if (shapeType === "pentagon" || shapeType === "hexagon" || shapeType === "octagon" || shapeType === "decagon") {
-            var sides = 5
-            if (shapeType === "hexagon") sides = 6
-            if (shapeType === "octagon") sides = 8
-            if (shapeType === "decagon") sides = 10
-
-            for (var i = 0; i < sides; i++) {
-                var angle = (i * 2 * Math.PI / sides) - Math.PI / 2
-                var px = cx + r * Math.cos(angle)
-                var py = cy + r * Math.sin(angle)
-                if (i === 0) ctx.moveTo(px, py)
-                else ctx.lineTo(px, py)
-            }
-        } else if (shapeType.startsWith("gear_") || shapeType.startsWith("scallop_")) {
-            var teeth = parseInt(shapeType.split("_")[1]) || 12
+        } else if (shapeType === "scallop_8") {
+            var teeth = 8
             var rInner = r * 0.82
             for (var a = 0; a <= 360; a += 2) {
                 var rad = a * Math.PI / 180
@@ -170,17 +147,6 @@ Item {
                 var y = cy - radiusVal * Math.cos(rad)
                 if (a === 0) ctx.moveTo(x, y)
                 else ctx.lineTo(x, y)
-            }
-        } else if (shapeType.startsWith("star_")) {
-            var pts = parseInt(shapeType.split("_")[1]) || 8
-            var innerR = r * 0.65
-            for (var k = 0; k < pts * 2; k++) {
-                var stAngle = (k * Math.PI) / pts - Math.PI / 2
-                var curR = (k % 2 === 0) ? r : innerR
-                var sx = cx + curR * Math.cos(stAngle)
-                var sy = cy + curR * Math.sin(stAngle)
-                if (k === 0) ctx.moveTo(sx, sy)
-                else ctx.lineTo(sx, sy)
             }
         } else if (shapeType === "flower_4" || shapeType === "clover_4") {
             var rIn = r * 0.65
@@ -272,17 +238,64 @@ Item {
                     ctx.fillStyle = grad
                     ctx.fill()
 
-                    // Icon / Hint Text inside shape
+                    // Text inside shape
                     ctx.fillStyle = "#A2C9C2"
-                    ctx.font = "bold 13px 'Google Sans', sans-serif"
+                    ctx.font = "bold 12px 'Google Sans', sans-serif"
                     ctx.textAlign = "center"
                     ctx.textBaseline = "middle"
-                    ctx.fillText("📷 Double Click", width / 2, height / 2 - 10)
+                    ctx.fillText("Click to select pic", width / 2, height / 2 - 8)
                     ctx.fillStyle = "#A0ACAC"
                     ctx.font = "11px 'Google Sans', sans-serif"
-                    ctx.fillText("Select Photo", width / 2, height / 2 + 12)
+                    ctx.fillText("Double-tap for shape", width / 2, height / 2 + 12)
                 }
             }
+        }
+
+        // Right-Click Context Menu
+        Rectangle {
+            id: contextMenu
+            visible: root.showContextMenu
+            width: 120
+            height: 38
+            radius: 12
+            color: "#253035"
+            border.color: "#3D484E"
+            border.width: 1
+            z: 99
+            anchors.centerIn: parent
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 6
+
+                Text {
+                    text: "Select a Pic"
+                    color: "#C2E7FF"
+                    font.pixelSize: 12
+                    font.bold: true
+                    font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: {
+                    root.showContextMenu = false
+                    pickerProc.running = true
+                }
+            }
+        }
+    }
+
+    // Timer to differentiate single click vs double tap smoothly
+    Timer {
+        id: singleClickTimer
+        interval: 220
+        repeat: false
+        onTriggered: {
+            // Single tap: open file manager to pick an image
+            pickerProc.running = true
         }
     }
 
@@ -290,6 +303,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         drag.target: root
         drag.axis: Drag.XAndYAxis
         drag.minimumX: 10
@@ -298,13 +312,24 @@ Item {
         drag.maximumY: Math.max(10, root.screenHeight - root.height - 10)
         cursorShape: drag.active ? Qt.ClosedHandCursor : (containsMouse ? Qt.OpenHandCursor : Qt.ArrowCursor)
 
-        onDoubleClicked: {
-            pickerProc.running = true
+        onDoubleClicked: (mouse) => {
+            if (mouse.button === Qt.LeftButton) {
+                singleClickTimer.stop()
+                root.showContextMenu = false
+                // Double tap: change shape
+                root.shapeIndex = (root.shapeIndex + 1) % root.shapeNames.length
+                root.saveSettings()
+            }
         }
 
-        onClicked: {
-            root.shapeIndex = (root.shapeIndex + 1) % root.shapeNames.length
-            root.saveSettings()
+        onClicked: (mouse) => {
+            if (mouse.button === Qt.RightButton) {
+                singleClickTimer.stop()
+                root.showContextMenu = !root.showContextMenu
+            } else if (mouse.button === Qt.LeftButton) {
+                root.showContextMenu = false
+                singleClickTimer.start()
+            }
         }
 
         onReleased: {

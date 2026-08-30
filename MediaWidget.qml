@@ -53,17 +53,44 @@ Item {
     property string title: "Pretty Patterns"
     property string artist: "ATLAS"
     property string artUrl: ""
-    property string status: "Stopped"
-    property real positionSec: 0
-    property real lengthSec: 0
-    property string posStr: "0:00"
-    property string lenStr: "0:00"
-    property real progress: 0.35
+    property string status: "Playing"
+    property real positionSec: 72
+    property real lengthSec: 225
+    property string posStr: "1:12"
+    property string lenStr: "3:45"
+    property real progress: 0.32
+    property bool hasActivePlayer: false
 
     function fmtTime(seconds) {
         var m = Math.floor(seconds / 60)
         var s = Math.floor(seconds % 60)
         return m + ":" + (s < 10 ? "0" + s : s)
+    }
+
+    // Process for media controls
+    Process {
+        id: controlProc
+        running: false
+    }
+
+    function sendMediaCmd(cmd) {
+        if (hasActivePlayer) {
+            controlProc.command = ["playerctl", cmd]
+            controlProc.running = true
+        } else {
+            // Internal playback simulation when playerctl or active MPRIS player is not present
+            if (cmd === "play-pause") {
+                root.status = (root.status === "Playing") ? "Paused" : "Playing"
+            } else if (cmd === "next") {
+                root.positionSec = 0
+                root.title = "Next Horizon"
+                root.artist = "Pixel Audio"
+            } else if (cmd === "previous") {
+                root.positionSec = 0
+                root.title = "Pretty Patterns"
+                root.artist = "ATLAS"
+            }
+        }
     }
 
     // ─── MPRIS Process Query ───
@@ -74,8 +101,9 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 var line = text.trim()
-                if (line.length > 0 && line.includes(";;")) {
+                if (line.length > 0 && line.includes(";;") && !line.includes("No players found")) {
                     var parts = line.split(";;")
+                    root.hasActivePlayer = true
                     root.title = parts[0] || "Unknown Title"
                     root.artist = parts[1] || "Unknown Artist"
                     root.artUrl = parts[2] || ""
@@ -90,18 +118,13 @@ Item {
                     root.lenStr = root.lengthSec > 0 ? root.fmtTime(root.lengthSec) : "--:--"
                     root.progress = root.lengthSec > 0 ? Math.min(1.0, root.positionSec / root.lengthSec) : 0
                 } else {
-                    root.status = "Stopped"
-                    root.title = "Pretty Patterns"
-                    root.artist = "ATLAS"
-                    root.progress = 0.35
-                    root.artUrl = ""
-                    root.posStr = "1:12"
-                    root.lenStr = "3:45"
+                    root.hasActivePlayer = false
                 }
             }
         }
     }
 
+    // Simulation Timer for position when playing without MPRIS
     Timer {
         interval: 1000
         running: true
@@ -109,6 +132,11 @@ Item {
         triggeredOnStart: true
         onTriggered: {
             mediaProc.running = true
+            if (!root.hasActivePlayer && root.status === "Playing") {
+                root.positionSec = (root.positionSec + 1) % (root.lengthSec + 1)
+                root.posStr = root.fmtTime(root.positionSec)
+                root.progress = Math.min(1.0, root.positionSec / root.lengthSec)
+            }
         }
     }
 
@@ -117,11 +145,11 @@ Item {
         mediaProc.running = true
     }
 
-    // ─── Material / Pixel Dark Palette ───
+    // ─── Material You / M3 Palette ───
     readonly property color colBg: "#2B353A"              // Android Pixel Dark Slate Card
-    readonly property color colPillBg: "#3D484E"          // Control Pill Background
-    readonly property color colAccent: "#C2E7FF"          // Pixel Light Cyan/Green Accent
-    readonly property color colAccentDark: "#1E2A30"      // Dark Text on Accent
+    readonly property color colPillBg: "#3D484E"          // Control Pill / Inactive Track
+    readonly property color colAccent: "#C2E7FF"          // M3 Light Cyan Active Accent
+    readonly property color colAccentDark: "#1E2A30"      // Dark Fill for Scalloped Button Icon
     readonly property color colTextPrimary: "#E1E2E5"
     readonly property color colTextSecondary: "#A0ACAC"
 
@@ -142,7 +170,7 @@ Item {
             Column {
                 anchors.fill: parent
                 anchors.margins: 14
-                spacing: 10
+                spacing: 12
 
                 // Top Header: Album Art + Track Info + Media Controls Pill
                 Row {
@@ -235,46 +263,61 @@ Item {
                             anchors.centerIn: parent
                             spacing: 4
 
-                            // Previous Track
+                            // Previous Track Vector Icon
                             Item {
                                 width: 28
                                 height: 28
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "⏮"
-                                    color: root.colTextPrimary
-                                    font.pixelSize: 13
+                                Canvas {
+                                    anchors.fill: parent
+                                    antialiasing: true
+                                    onPaint: {
+                                        var ctx = getContext("2d")
+                                        ctx.reset()
+                                        ctx.fillStyle = root.colTextPrimary
+                                        ctx.beginPath()
+                                        ctx.fillRect(8, 8, 2, 12)
+                                        ctx.moveTo(19, 8)
+                                        ctx.lineTo(11, 14)
+                                        ctx.lineTo(19, 20)
+                                        ctx.closePath()
+                                        ctx.fill()
+                                    }
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        Quickshell.execDetached(["playerctl", "previous"])
-                                        mediaProc.running = true
+                                        root.sendMediaCmd("previous")
                                     }
                                 }
                             }
 
-                            // Scalloped Play / Pause Button (Pixel Style)
+                            // Scalloped Play / Pause Button (Pixel M3 Style)
                             Item {
-                                width: 36
-                                height: 36
+                                width: 38
+                                height: 38
 
                                 Canvas {
                                     id: scallopCanvas
                                     anchors.fill: parent
                                     antialiasing: true
 
+                                    Connections {
+                                        target: root
+                                        function onStatusChanged() { scallopCanvas.requestPaint() }
+                                    }
+
                                     onPaint: {
                                         var ctx = getContext("2d")
                                         ctx.reset()
                                         var cx = width / 2
                                         var cy = height / 2
-                                        var rOuter = 17
-                                        var rInner = 14
+                                        var rOuter = 18
+                                        var rInner = 15
                                         var points = 12
 
+                                        // Scalloped Background
                                         ctx.beginPath()
                                         for (var i = 0; i < points * 2; i++) {
                                             var angle = (i * Math.PI) / points
@@ -287,43 +330,59 @@ Item {
                                         ctx.closePath()
                                         ctx.fillStyle = root.colAccent
                                         ctx.fill()
-                                    }
-                                }
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: root.status === "Playing" ? "❚❚" : "▶"
-                                    color: root.colAccentDark
-                                    font.pixelSize: 11
-                                    font.bold: true
+                                        // Vector Play / Pause Icon
+                                        ctx.fillStyle = root.colAccentDark
+                                        if (root.status === "Playing") {
+                                            // Pause bars
+                                            ctx.fillRect(cx - 5, cy - 6, 3.5, 12)
+                                            ctx.fillRect(cx + 1.5, cy - 6, 3.5, 12)
+                                        } else {
+                                            // Play triangle
+                                            ctx.beginPath()
+                                            ctx.moveTo(cx - 4, cy - 7)
+                                            ctx.lineTo(cx + 6, cy)
+                                            ctx.lineTo(cx - 4, cy + 7)
+                                            ctx.closePath()
+                                            ctx.fill()
+                                        }
+                                    }
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        Quickshell.execDetached(["playerctl", "play-pause"])
-                                        mediaProc.running = true
+                                        root.sendMediaCmd("play-pause")
                                     }
                                 }
                             }
 
-                            // Next Track
+                            // Next Track Vector Icon
                             Item {
                                 width: 28
                                 height: 28
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "⏭"
-                                    color: root.colTextPrimary
-                                    font.pixelSize: 13
+                                Canvas {
+                                    anchors.fill: parent
+                                    antialiasing: true
+                                    onPaint: {
+                                        var ctx = getContext("2d")
+                                        ctx.reset()
+                                        ctx.fillStyle = root.colTextPrimary
+                                        ctx.beginPath()
+                                        ctx.moveTo(9, 8)
+                                        ctx.lineTo(17, 14)
+                                        ctx.lineTo(9, 20)
+                                        ctx.closePath()
+                                        ctx.fill()
+                                        ctx.fillRect(18, 8, 2, 12)
+                                    }
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        Quickshell.execDetached(["playerctl", "next"])
-                                        mediaProc.running = true
+                                        root.sendMediaCmd("next")
                                     }
                                 }
                             }
@@ -331,29 +390,61 @@ Item {
                     }
                 }
 
-                // Bottom Section: Progress Bar & Seek Timers
+                // Bottom Section: Material 3 (M3) Slider Track & Duration Timers
                 Column {
                     width: parent.width
                     spacing: 6
 
-                    // Wave / Pill Progress Bar
-                    Rectangle {
+                    // M3 Thick Track + Thumb Indicator (Interactive Scrubbing)
+                    Item {
+                        id: progressTrack
                         width: parent.width
-                        height: 8
-                        radius: 4
-                        color: root.colPillBg
-                        antialiasing: true
+                        height: 16
 
+                        // Inactive Track (Thick rounded bar)
                         Rectangle {
-                            width: Math.max(parent.radius * 2, parent.width * root.progress)
-                            height: parent.height
-                            radius: parent.radius
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            height: 6
+                            radius: 3
+                            color: root.colPillBg
+                            antialiasing: true
+                        }
+
+                        // Active Track (Accent Pill)
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Math.max(6, parent.width * root.progress)
+                            height: 6
+                            radius: 3
                             color: root.colAccent
                             antialiasing: true
                         }
+
+                        // M3 Slider Thumb Handle Indicator
+                        Rectangle {
+                            width: 6
+                            height: 12
+                            radius: 3
+                            color: root.colAccent
+                            x: Math.min(parent.width - width, Math.max(0, parent.width * root.progress - width / 2))
+                            anchors.verticalCenter: parent.verticalCenter
+                            antialiasing: true
+                        }
+
+                        // MouseArea for seeking / scrubbing
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: (mouse) => {
+                                var ratio = Math.max(0, Math.min(1.0, mouse.x / width))
+                                root.progress = ratio
+                                root.positionSec = Math.round(ratio * root.lengthSec)
+                                root.posStr = root.fmtTime(root.positionSec)
+                            }
+                        }
                     }
 
-                    // Pos & Length Text
+                    // Duration Timers Row
                     Row {
                         width: parent.width
 
@@ -361,6 +452,7 @@ Item {
                             text: root.posStr
                             color: root.colTextSecondary
                             font.pixelSize: 10
+                            font.bold: true
                             font.family: "Google Sans Flex, Google Sans, Inter, monospace"
                         }
 
@@ -373,6 +465,7 @@ Item {
                             text: root.lenStr
                             color: root.colTextSecondary
                             font.pixelSize: 10
+                            font.bold: true
                             font.family: "Google Sans Flex, Google Sans, Inter, monospace"
                         }
                     }
