@@ -13,7 +13,6 @@
       "network": true,
       "notes": true,
       "todo": true,
-      "dock": true,
       "timer": true,
       "thermal": true,
       "quote": true,
@@ -125,10 +124,5 @@
     "x": 1120,
     "y": 850,
     "scale": 0.85
-  },
-  "dock": {
-    "x": 460,
-    "y": 980,
-    "scale": 0.95
   }
 }

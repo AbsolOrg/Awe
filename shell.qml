@@ -35,7 +35,6 @@ ShellRoot {
                 Region { item: networkWidget }
                 Region { item: notesWidget }
                 Region { item: todoWidget }
-                Region { item: dockWidget }
                 Region { item: timerWidget }
                 Region { item: thermalWidget }
                 Region { item: quoteWidget }
@@ -129,13 +128,6 @@ ShellRoot {
                 TodoWidget {
                     id: todoWidget
                     visible: widgetManager.widgetVisibility["todo"] !== false
-                    screenWidth: desktopWindow.width
-                    screenHeight: desktopWindow.height
-                }
-
-                DockWidget {
-                    id: dockWidget
-                    visible: widgetManager.widgetVisibility["dock"] !== false
                     screenWidth: desktopWindow.width
                     screenHeight: desktopWindow.height
                 }
