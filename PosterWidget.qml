@@ -17,10 +17,11 @@ Item {
     width: Math.round(200 * scaleFactor)
     height: Math.round(200 * scaleFactor)
 
-    // User customized image path and shape index
+    // User customized image path, temp preview path, and shape index
     property string imagePath: ""
+    property string tempPathInput: ""
     property int shapeIndex: 0
-    property bool showContextMenu: false
+    property bool showPathDialog: false
 
     // ─── Settings Persistence ───
     Process {
@@ -57,7 +58,23 @@ Item {
         saveSettingsProc.running = true
     }
 
-    // Process to pick an image using Python Tkinter file dialog
+    // Process to ask user for path / file via Zenity / Python GUI prompt on right-click option
+    Process {
+        id: pathPromptProc
+        command: ["python3", "-c", "import tkinter as tk, tkinter.filedialog as fd, tkinter.simpledialog as sd; root=tk.Tk(); root.withdraw(); root.attributes('-topmost', True); path=sd.askstring('Image Path', 'Paste image file path or URL:'); print(path if path else '')"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var selected = text.trim()
+                if (selected.length > 0) {
+                    root.tempPathInput = selected
+                    root.showPathDialog = true
+                }
+            }
+        }
+    }
+
+    // Process to open standard file chooser
     Process {
         id: pickerProc
         command: ["python3", "-c", "import tkinter as tk, tkinter.filedialog as fd; root=tk.Tk(); root.withdraw(); root.attributes('-topmost', True); path=fd.askopenfilename(title='Select Image for Frame', filetypes=[('Images', '*.png *.jpg *.jpeg *.webp *.bmp *.gif')]); print(path if path else '')"]
@@ -66,8 +83,8 @@ Item {
             onStreamFinished: {
                 var selected = text.trim()
                 if (selected.length > 0) {
-                    root.imagePath = selected
-                    root.saveSettings()
+                    root.tempPathInput = selected
+                    root.showPathDialog = true
                 }
             }
         }
@@ -77,7 +94,7 @@ Item {
         loadSettingsProc.running = true
     }
 
-    // ─── Only Smooth / Curved Shapes ───
+    // ─── Smooth / Curved Shapes ───
     property var shapeNames: [
         "circle", "squircle", "stadium_h", "arch",
         "semicircle_top", "ellipse", "pebble", "pillow",
@@ -198,6 +215,15 @@ Item {
         }
     }
 
+    // Temp image preview for confirmation dialog
+    Image {
+        id: tempPreviewImage
+        source: root.tempPathInput
+        visible: false
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+    }
+
     // ─── Scaled Visual Content ───
     Item {
         id: scaledContent
@@ -243,58 +269,111 @@ Item {
                     ctx.font = "bold 12px 'Google Sans', sans-serif"
                     ctx.textAlign = "center"
                     ctx.textBaseline = "middle"
-                    ctx.fillText("Click to select pic", width / 2, height / 2 - 8)
+                    ctx.fillText("Right-click for Path / Pic", width / 2, height / 2 - 8)
                     ctx.fillStyle = "#A0ACAC"
                     ctx.font = "11px 'Google Sans', sans-serif"
-                    ctx.fillText("Double-tap for shape", width / 2, height / 2 + 12)
+                    ctx.fillText("Double-tap for Shape", width / 2, height / 2 + 12)
                 }
             }
         }
 
-        // Right-Click Context Menu
+        // Confirmation / Adjustment Dialog Overlay before setting
         Rectangle {
-            id: contextMenu
-            visible: root.showContextMenu
-            width: 120
-            height: 38
-            radius: 12
-            color: "#253035"
+            id: pathConfirmOverlay
+            visible: root.showPathDialog
+            anchors.fill: parent
+            radius: 24
+            color: "#1E2A30"
             border.color: "#3D484E"
-            border.width: 1
-            z: 99
-            anchors.centerIn: parent
+            border.width: 2
+            z: 100
 
-            Row {
+            Column {
                 anchors.centerIn: parent
-                spacing: 6
+                spacing: 8
+                width: parent.width - 20
 
                 Text {
-                    text: "Select a Pic"
-                    color: "#C2E7FF"
-                    font.pixelSize: 12
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Set Image Path?"
+                    color: "#FFFFFF"
+                    font.pixelSize: 13
                     font.bold: true
                     font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
                 }
-            }
 
-            MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: {
-                    root.showContextMenu = false
-                    pickerProc.running = true
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: root.tempPathInput.length > 25 ? "..." + root.tempPathInput.slice(-22) : root.tempPathInput
+                    color: "#A0ACAC"
+                    font.pixelSize: 10
+                    elide: Text.ElideMiddle
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    font.family: "Google Sans Flex, Google Sans, Inter, monospace"
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 10
+
+                    Rectangle {
+                        width: 70
+                        height: 28
+                        radius: 14
+                        color: "#C2E7FF"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Set Pic"
+                            color: "#1E2A30"
+                            font.pixelSize: 11
+                            font.bold: true
+                            font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                root.imagePath = root.tempPathInput
+                                root.showPathDialog = false
+                                root.saveSettings()
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: 70
+                        height: 28
+                        radius: 14
+                        color: "#3D484E"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Cancel"
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
+                            font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                root.showPathDialog = false
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    // Timer to differentiate single click vs double tap smoothly
+    // Timer to differentiate single click vs double tap
     Timer {
         id: singleClickTimer
         interval: 220
         repeat: false
         onTriggered: {
-            // Single tap: open file manager to pick an image
             pickerProc.running = true
         }
     }
@@ -315,8 +394,6 @@ Item {
         onDoubleClicked: (mouse) => {
             if (mouse.button === Qt.LeftButton) {
                 singleClickTimer.stop()
-                root.showContextMenu = false
-                // Double tap: change shape
                 root.shapeIndex = (root.shapeIndex + 1) % root.shapeNames.length
                 root.saveSettings()
             }
@@ -325,9 +402,8 @@ Item {
         onClicked: (mouse) => {
             if (mouse.button === Qt.RightButton) {
                 singleClickTimer.stop()
-                root.showContextMenu = !root.showContextMenu
+                pathPromptProc.running = true
             } else if (mouse.button === Qt.LeftButton) {
-                root.showContextMenu = false
                 singleClickTimer.start()
             }
         }
