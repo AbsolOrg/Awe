@@ -14,8 +14,12 @@ Item {
 
     x: Math.max(10, Math.min(root.screenWidth - root.width - 10, posX))
     y: Math.max(10, Math.min(root.screenHeight - root.height - 10, posY))
-    width: Math.round(360 * scaleFactor)
-    height: Math.round(180 * scaleFactor)
+    width: Math.round(200 * scaleFactor)
+    height: Math.round(200 * scaleFactor)
+
+    // User customized image path and shape index
+    property string imagePath: ""
+    property int shapeIndex: 0
 
     // ─── Settings Persistence ───
     Process {
@@ -28,10 +32,12 @@ Item {
                     var data = JSON.parse(text)
                     if (data.poster) {
                         if (data.poster.scale !== undefined) root.scaleFactor = Math.max(0.5, Math.min(2.5, data.poster.scale))
-                        var w = Math.round(360 * root.scaleFactor)
-                        var h = Math.round(180 * root.scaleFactor)
+                        var w = Math.round(200 * root.scaleFactor)
+                        var h = Math.round(200 * root.scaleFactor)
                         if (data.poster.x !== undefined) root.posX = Math.max(10, Math.min(root.screenWidth - w - 10, data.poster.x))
                         if (data.poster.y !== undefined) root.posY = Math.max(10, Math.min(root.screenHeight - h - 10, data.poster.y))
+                        if (data.poster.imagePath !== undefined) root.imagePath = data.poster.imagePath
+                        if (data.poster.shapeIndex !== undefined) root.shapeIndex = data.poster.shapeIndex
                     }
                 } catch (e) {}
             }
@@ -44,162 +50,243 @@ Item {
     }
 
     function saveSettings() {
-        var script = "python3 -c 'import json, os; p=os.path.expanduser(\"~/.config/quickshell/widget_settings.json\"); d=json.load(open(p)) if os.path.exists(p) else {}; d[\"poster\"]={\"x\":" + Math.round(root.x) + ",\"y\":" + Math.round(root.y) + ",\"scale\":" + root.scaleFactor.toFixed(2) + "}; open(p,\"w\").write(json.dumps(d,indent=2))'"
+        var safePath = root.imagePath.replace(/'/g, "'\\''")
+        var script = "python3 -c 'import json, os; p=os.path.expanduser(\"~/.config/quickshell/widget_settings.json\"); d=json.load(open(p)) if os.path.exists(p) else {}; d[\"poster\"]={\"x\":" + Math.round(root.x) + ",\"y\":" + Math.round(root.y) + ",\"scale\":" + root.scaleFactor.toFixed(2) + ",\"imagePath\":\"" + safePath + "\",\"shapeIndex\":" + root.shapeIndex + "}; open(p,\"w\").write(json.dumps(d,indent=2))'"
         saveSettingsProc.command = ["sh", "-c", script]
         saveSettingsProc.running = true
+    }
+
+    // Process to pick an image using Python Tkinter file dialog
+    Process {
+        id: pickerProc
+        command: ["python3", "-c", "import tkinter as tk, tkinter.filedialog as fd; root=tk.Tk(); root.withdraw(); root.attributes('-topmost', True); path=fd.askopenfilename(title='Select Image for Frame', filetypes=[('Images', '*.png *.jpg *.jpeg *.webp *.bmp *.gif')]); print(path if path else '')"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var selected = text.trim()
+                if (selected.length > 0) {
+                    root.imagePath = selected
+                    root.saveSettings()
+                }
+            }
+        }
     }
 
     Component.onCompleted: {
         loadSettingsProc.running = true
     }
 
-    // ─── Material Dark Slate Theme Palette ───
-    readonly property color colBg: "#3A454B"              // Dark Slate Main Card
-    readonly property color colBadgeBg: "#4D585F"         // Slate Pill Badge
-    readonly property color colTextPrimary: "#FFFFFF"
-    readonly property color colTextSecondary: "#B0BEC5"
-
-    // ─── Quotes / Editorial Content ───
-    property var quotes: [
-        {
-            title: "SUMMER MEMORIES",
-            subtitle: "Warm sunlight, ocean breeze, and the quiet beauty of an endless horizon.",
-            seal: "SPECIAL",
-            footer: "PACIFIC DRIVE · 2026",
-            date: "EST. CALIFORNIA"
-        },
-        {
-            title: "CREATIVE FOCUS",
-            subtitle: "Simplicity is the ultimate sophistication. Design with intention and clarity.",
-            seal: "STUDIO",
-            footer: "MATERIAL YOU · GOOGLE",
-            date: "DAILY EDITION"
-        },
-        {
-            title: "NIGHT HORIZONS",
-            subtitle: "Under quiet stars and glowing screens, great ideas take flight.",
-            seal: "ARCHIVE",
-            footer: "QUICKSHELL LINUX",
-            date: "VOL. 04"
-        }
+    // ─── Shape Definition & Drawing Functions ───
+    property var shapeNames: [
+        "circle", "squircle", "stadium_h", "arch", "triangle_up",
+        "semicircle_top", "ellipse", "pebble", "diamond", "pillow",
+        "pentagon", "hexagon", "gear_12", "star_8", "flower_4",
+        "scallop_8", "octagon", "star_12", "clover_4", "decagon",
+        "star_16", "gear_16", "oval_small", "rhombus", "badge_4",
+        "pill_v", "heart"
     ]
-    property int currentQuoteIndex: 0
+
+    function drawShapePath(ctx, shapeType, w, h) {
+        var cx = w / 2
+        var cy = h / 2
+        var r = Math.min(w, h) / 2 - 2
+
+        ctx.beginPath()
+
+        if (shapeType === "circle") {
+            ctx.arc(cx, cy, r, 0, Math.PI * 2)
+        } else if (shapeType === "squircle") {
+            var radius = r * 0.45
+            ctx.moveTo(cx - r + radius, cy - r)
+            ctx.lineTo(cx + r - radius, cy - r)
+            ctx.quadraticCurveTo(cx + r, cy - r, cx + r, cy - r + radius)
+            ctx.lineTo(cx + r, cy + r - radius)
+            ctx.quadraticCurveTo(cx + r, cy + r, cx + r - radius, cy + r)
+            ctx.lineTo(cx - r + radius, cy + r)
+            ctx.quadraticCurveTo(cx - r, cy + r, cx - r, cy + r - radius)
+            ctx.lineTo(cx - r, cy - r + radius)
+            ctx.quadraticCurveTo(cx - r, cy - r, cx - r + radius, cy - r)
+        } else if (shapeType === "stadium_h") {
+            var rx = r
+            var ry = r * 0.65
+            ctx.moveTo(cx - rx + ry, cy - ry)
+            ctx.lineTo(cx + rx - ry, cy - ry)
+            ctx.arc(cx + rx - ry, cy, ry, -Math.PI / 2, Math.PI / 2)
+            ctx.lineTo(cx - rx + ry, cy + ry)
+            ctx.arc(cx - rx + ry, cy, ry, Math.PI / 2, 3 * Math.PI / 2)
+        } else if (shapeType === "arch") {
+            ctx.moveTo(cx - r, cy + r)
+            ctx.lineTo(cx + r, cy + r)
+            ctx.lineTo(cx + r, cy)
+            ctx.arc(cx, cy, r, 0, Math.PI, true)
+            ctx.lineTo(cx - r, cy + r)
+        } else if (shapeType === "triangle_up") {
+            ctx.moveTo(cx, cy - r)
+            ctx.lineTo(cx + r * 0.95, cy + r * 0.85)
+            ctx.lineTo(cx - r * 0.95, cy + r * 0.85)
+        } else if (shapeType === "semicircle_top") {
+            ctx.moveTo(cx - r, cy + r * 0.3)
+            ctx.arc(cx, cy + r * 0.3, r, Math.PI, 0, false)
+            ctx.lineTo(cx - r, cy + r * 0.3)
+        } else if (shapeType === "ellipse") {
+            ctx.ellipse(cx - r, cy - r * 0.65, r * 2, r * 1.3)
+        } else if (shapeType === "pebble") {
+            ctx.moveTo(cx - r * 0.8, cy - r * 0.5)
+            ctx.bezierCurveTo(cx - r, cy - r, cx + r * 0.2, cy - r, cx + r * 0.9, cy - r * 0.4)
+            ctx.bezierCurveTo(cx + r * 1.1, cy, cx + r * 0.8, cy + r * 0.9, cx, cy + r)
+            ctx.bezierCurveTo(cx - r * 0.9, cy + r * 0.9, cx - r * 1.1, cy, cx - r * 0.8, cy - r * 0.5)
+        } else if (shapeType === "diamond") {
+            ctx.moveTo(cx, cy - r)
+            ctx.lineTo(cx + r, cy)
+            ctx.lineTo(cx, cy + r)
+            ctx.lineTo(cx - r, cy)
+        } else if (shapeType === "pillow") {
+            ctx.moveTo(cx, cy - r)
+            ctx.quadraticCurveTo(cx + r * 0.8, cy - r * 0.8, cx + r, cy)
+            ctx.quadraticCurveTo(cx + r * 0.8, cy + r * 0.8, cx, cy + r)
+            ctx.quadraticCurveTo(cx - r * 0.8, cy + r * 0.8, cx - r, cy)
+            ctx.quadraticCurveTo(cx - r * 0.8, cy - r * 0.8, cx, cy - r)
+        } else if (shapeType === "pentagon" || shapeType === "hexagon" || shapeType === "octagon" || shapeType === "decagon") {
+            var sides = 5
+            if (shapeType === "hexagon") sides = 6
+            if (shapeType === "octagon") sides = 8
+            if (shapeType === "decagon") sides = 10
+
+            for (var i = 0; i < sides; i++) {
+                var angle = (i * 2 * Math.PI / sides) - Math.PI / 2
+                var px = cx + r * Math.cos(angle)
+                var py = cy + r * Math.sin(angle)
+                if (i === 0) ctx.moveTo(px, py)
+                else ctx.lineTo(px, py)
+            }
+        } else if (shapeType.startsWith("gear_") || shapeType.startsWith("scallop_")) {
+            var teeth = parseInt(shapeType.split("_")[1]) || 12
+            var rInner = r * 0.82
+            for (var a = 0; a <= 360; a += 2) {
+                var rad = a * Math.PI / 180
+                var wave = (Math.cos(teeth * rad) + 1.0) / 2.0
+                var radiusVal = rInner + (r - rInner) * wave
+                var x = cx + radiusVal * Math.sin(rad)
+                var y = cy - radiusVal * Math.cos(rad)
+                if (a === 0) ctx.moveTo(x, y)
+                else ctx.lineTo(x, y)
+            }
+        } else if (shapeType.startsWith("star_")) {
+            var pts = parseInt(shapeType.split("_")[1]) || 8
+            var innerR = r * 0.65
+            for (var k = 0; k < pts * 2; k++) {
+                var stAngle = (k * Math.PI) / pts - Math.PI / 2
+                var curR = (k % 2 === 0) ? r : innerR
+                var sx = cx + curR * Math.cos(stAngle)
+                var sy = cy + curR * Math.sin(stAngle)
+                if (k === 0) ctx.moveTo(sx, sy)
+                else ctx.lineTo(sx, sy)
+            }
+        } else if (shapeType === "flower_4" || shapeType === "clover_4") {
+            var rIn = r * 0.65
+            for (var fl = 0; fl <= 360; fl += 3) {
+                var flRad = fl * Math.PI / 180
+                var flR = rIn + (r - rIn) * (Math.cos(4 * flRad) + 1.0) / 2.0
+                var fx = cx + flR * Math.sin(flRad)
+                var fy = cy - flR * Math.cos(flRad)
+                if (fl === 0) ctx.moveTo(fx, fy)
+                else ctx.lineTo(fx, fy)
+            }
+        } else if (shapeType === "badge_4") {
+            for (var bg = 0; bg <= 360; bg += 3) {
+                var bgRad = bg * Math.PI / 180
+                var bgR = r * 0.75 + r * 0.25 * Math.abs(Math.sin(2 * bgRad))
+                var bx = cx + bgR * Math.sin(bgRad)
+                var by = cy - bgR * Math.cos(bgRad)
+                if (bg === 0) ctx.moveTo(bx, by)
+                else ctx.lineTo(bx, by)
+            }
+        } else if (shapeType === "pill_v") {
+            var pvy = r
+            var pvx = r * 0.55
+            ctx.moveTo(cx - pvx, cy - pvy + pvx)
+            ctx.arc(cx, cy - pvy + pvx, pvx, Math.PI, 0, false)
+            ctx.lineTo(cx + pvx, cy + pvy - pvx)
+            ctx.arc(cx, cy + pvy - pvx, pvx, 0, Math.PI, false)
+            ctx.lineTo(cx - pvx, cy - pvy + pvx)
+        } else if (shapeType === "heart") {
+            ctx.moveTo(cx, cy + r * 0.75)
+            ctx.bezierCurveTo(cx - r * 1.1, cy + r * 0.2, cx - r * 1.1, cy - r * 0.7, cx, cy - r * 0.35)
+            ctx.bezierCurveTo(cx + r * 1.1, cy - r * 0.7, cx + r * 1.1, cy + r * 0.2, cx, cy + r * 0.75)
+        } else {
+            ctx.arc(cx, cy, r, 0, Math.PI * 2)
+        }
+
+        ctx.closePath()
+    }
+
+    // Hidden source image component
+    Image {
+        id: sourceImage
+        source: root.imagePath
+        visible: false
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        onStatusChanged: {
+            shapeCanvas.requestPaint()
+        }
+    }
 
     // ─── Scaled Visual Content ───
     Item {
         id: scaledContent
-        width: 360
-        height: 180
+        width: 200
+        height: 200
         scale: root.scaleFactor
         transformOrigin: Item.TopLeft
 
-        // ─── Material Editorial Poster Card ───
-        Rectangle {
+        Canvas {
+            id: shapeCanvas
             anchors.fill: parent
-            color: root.colBg
-            radius: 32
             antialiasing: true
 
-            Column {
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 8
+            Connections {
+                target: root
+                function onImagePathChanged() { shapeCanvas.requestPaint() }
+                function onShapeIndexChanged() { shapeCanvas.requestPaint() }
+            }
 
-                // Top Bar: Seal Badge & Date Range
-                Row {
-                    width: parent.width
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.reset()
 
-                    Rectangle {
-                        height: 20
-                        width: sealText.implicitWidth + 14
-                        radius: 10
-                        color: root.colBadgeBg
-                        antialiasing: true
+                var currentShape = root.shapeNames[root.shapeIndex % root.shapeNames.length]
 
-                        Text {
-                            id: sealText
-                            anchors.centerIn: parent
-                            text: root.quotes[root.currentQuoteIndex].seal
-                            color: root.colTextPrimary
-                            font.pixelSize: 9
-                            font.bold: true
-                            font.letterSpacing: 1
-                            font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
-                        }
-                    }
+                // Clip path to current shape
+                root.drawShapePath(ctx, currentShape, width, height)
+                ctx.clip()
 
-                    Item {
-                        width: Math.max(0, parent.width - (parent.children[0].width + dateLabel.width))
-                        height: 1
-                    }
+                if (sourceImage.status === Image.Ready && root.imagePath.length > 0) {
+                    // Draw custom image filled inside shape
+                    ctx.drawImage(sourceImage, 0, 0, width, height)
+                } else {
+                    // Placeholder material style fill when no image selected
+                    var grad = ctx.createLinearGradient(0, 0, width, height)
+                    grad.addColorStop(0, "#3D484E")
+                    grad.addColorStop(1, "#253035")
+                    ctx.fillStyle = grad
+                    ctx.fill()
 
-                    Text {
-                        id: dateLabel
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: root.quotes[root.currentQuoteIndex].date
-                        color: root.colTextSecondary
-                        font.pixelSize: 10
-                        font.letterSpacing: 0.8
-                        font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
-                    }
-                }
-
-                // Main English Title
-                Text {
-                    text: root.quotes[root.currentQuoteIndex].title
-                    color: root.colTextPrimary
-                    font.pixelSize: 17
-                    font.bold: true
-                    font.letterSpacing: 1.2
-                    font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
-                }
-
-                // Subtitle / English Quote
-                Text {
-                    text: root.quotes[root.currentQuoteIndex].subtitle
-                    color: root.colTextSecondary
-                    font.pixelSize: 11
-                    wrapMode: Text.WordWrap
-                    width: parent.width
-                    lineHeight: 1.25
-                    font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
-                }
-
-                // Subtle Accent Rule
-                Rectangle {
-                    width: parent.width
-                    height: 1
-                    color: "#1AFFFFFF"
-                }
-
-                // Footer text
-                Row {
-                    width: parent.width
-                    Text {
-                        text: root.quotes[root.currentQuoteIndex].footer
-                        color: root.colTextSecondary
-                        font.pixelSize: 10
-                        font.letterSpacing: 0.6
-                        font.bold: true
-                        font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
-                    }
-                    Item {
-                        width: Math.max(0, parent.width - parent.children[0].width - hintText.width)
-                        height: 1
-                    }
-                    Text {
-                        id: hintText
-                        text: "Double-click to cycle"
-                        color: "#60FFFFFF"
-                        font.pixelSize: 9
-                        font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
-                    }
+                    // Icon / Hint Text inside shape
+                    ctx.fillStyle = "#A2C9C2"
+                    ctx.font = "bold 13px 'Google Sans', sans-serif"
+                    ctx.textAlign = "center"
+                    ctx.textBaseline = "middle"
+                    ctx.fillText("📷 Double Click", width / 2, height / 2 - 10)
+                    ctx.fillStyle = "#A0ACAC"
+                    ctx.font = "11px 'Google Sans', sans-serif"
+                    ctx.fillText("Select Photo", width / 2, height / 2 + 12)
                 }
             }
         }
     }
 
-    // ─── Interactive MouseArea ───
+    // ─── Mouse Handling ───
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
@@ -212,7 +299,12 @@ Item {
         cursorShape: drag.active ? Qt.ClosedHandCursor : (containsMouse ? Qt.OpenHandCursor : Qt.ArrowCursor)
 
         onDoubleClicked: {
-            root.currentQuoteIndex = (root.currentQuoteIndex + 1) % root.quotes.length
+            pickerProc.running = true
+        }
+
+        onClicked: {
+            root.shapeIndex = (root.shapeIndex + 1) % root.shapeNames.length
+            root.saveSettings()
         }
 
         onReleased: {
