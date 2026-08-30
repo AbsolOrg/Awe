@@ -17,9 +17,9 @@ Item {
     width: Math.round(270 * scaleFactor)
     height: Math.round(220 * scaleFactor)
 
-    // Notes Data
+    // Notes Data (Default color matches standard dark slate #232D33)
     property var notesList: [
-        { title: "Project Ideas", body: "Build smooth Material 3 widgets with instant inline typing and auto-save.", color: "#3C321E", date: "Today" },
+        { title: "Project Ideas", body: "Build smooth Material 3 widgets with instant inline typing and auto-save.", color: "#232D33", date: "Today" },
         { title: "Desktop Tweaks", body: "Organize layout grids and add animated soundwaves to media player.", color: "#1C3842", date: "Yesterday" },
         { title: "Quick Reminders", body: "Check dotfiles and test Wayland layershell transparency.", color: "#223B22", date: "Aug 30" }
     ]
@@ -81,7 +81,7 @@ Item {
     function updateCurrentNote() {
         if (root.notesList && root.notesList.length > root.currentNoteIndex) {
             var list = root.notesList.slice()
-            var prevColor = list[root.currentNoteIndex].color || "#3C321E"
+            var prevColor = list[root.currentNoteIndex].color || "#232D33"
             list[root.currentNoteIndex] = {
                 title: titleInput.text,
                 body: bodyInput.text,
@@ -100,25 +100,25 @@ Item {
 
     // Material 3 Dark & Pastel Tonal Palette
     property var themeColors: [
+        { name: "Slate", bg: "#232D33", badge: "#C2E7FF", border: "#3B4A53" },
         { name: "Amber", bg: "#3C321E", badge: "#FEEFC3", border: "#614E2E" },
         { name: "Seafoam", bg: "#1C3842", badge: "#CBF0F8", border: "#2E5A6B" },
         { name: "Mint", bg: "#223B22", badge: "#CCFF90", border: "#396139" },
-        { name: "Lilac", bg: "#35263F", badge: "#D7AEFB", border: "#583E69" },
-        { name: "Slate", bg: "#252E34", badge: "#C2E7FF", border: "#3B4A53" }
+        { name: "Lilac", bg: "#35263F", badge: "#D7AEFB", border: "#583E69" }
     ]
 
     readonly property color currentCardBg: {
         if (root.notesList && root.notesList[root.currentNoteIndex]) {
-            return root.notesList[root.currentNoteIndex].color || "#3C321E"
+            return root.notesList[root.currentNoteIndex].color || "#232D33"
         }
-        return "#3C321E"
+        return "#232D33"
     }
 
     readonly property color currentBadgeColor: {
         for (var i = 0; i < themeColors.length; i++) {
             if (themeColors[i].bg === root.currentCardBg) return themeColors[i].badge
         }
-        return "#FEEFC3"
+        return "#C2E7FF"
     }
 
     // ─── Scaled Visual Content ───
@@ -304,7 +304,7 @@ Item {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
                                     var list = root.notesList.slice()
-                                    list.push({ title: "New Memo", body: "Type note here...", color: "#3C321E", date: "Just now" })
+                                    list.push({ title: "New Memo", body: "Type note here...", color: "#232D33", date: "Just now" })
                                     root.notesList = list
                                     root.currentNoteIndex = list.length - 1
                                     root.loadCurrentNoteFields()
