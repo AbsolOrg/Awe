@@ -1,4 +1,29 @@
 {
+  "manager": {
+    "lockDragging": false,
+    "visibility": {
+      "clock": true,
+      "poster": true,
+      "calendar": true,
+      "media": true,
+      "sysinfo": true,
+      "battery": true,
+      "weather": true,
+      "quickcontrols": true,
+      "network": true,
+      "notes": true,
+      "todo": true,
+      "dock": true,
+      "timer": true,
+      "thermal": true,
+      "quote": true,
+      "clipboard": true,
+      "crypto": true,
+      "worldclock": true,
+      "git": true,
+      "resourcewheel": true
+    }
+  },
   "clock": {
     "x": 1120,
     "y": 40,
@@ -26,6 +51,12 @@
     "x": 30,
     "y": 650,
     "scale": 0.85
+  },
+  "crypto": {
+    "x": 30,
+    "y": 830,
+    "scale": 0.85,
+    "activeCoin": "bitcoin"
   },
   "sysinfo": {
     "x": 400,
@@ -59,6 +90,16 @@
     "y": 520,
     "scale": 0.85
   },
+  "git": {
+    "x": 400,
+    "y": 730,
+    "scale": 0.85
+  },
+  "resourcewheel": {
+    "x": 660,
+    "y": 730,
+    "scale": 0.85
+  },
   "battery": {
     "x": 1120,
     "y": 300,
@@ -78,6 +119,11 @@
   "quickcontrols": {
     "x": 1120,
     "y": 720,
+    "scale": 0.85
+  },
+  "worldclock": {
+    "x": 1120,
+    "y": 850,
     "scale": 0.85
   },
   "dock": {
