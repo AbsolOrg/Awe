@@ -1,0 +1,33 @@
+{
+  "clock": {
+    "x": 513,
+    "y": 257,
+    "scale": 0.8,
+    "style": "scallop"
+  },
+  "sysinfo": {
+    "x": 15,
+    "y": 43,
+    "scale": 0.95
+  },
+  "calendar": {
+    "x": 929,
+    "y": 134,
+    "scale": 1.1
+  },
+  "media": {
+    "x": 10,
+    "y": 517,
+    "scale": 0.65
+  },
+  "weather": {
+    "x": 10,
+    "y": 352,
+    "scale": 0.9
+  },
+  "poster": {
+    "x": 10,
+    "y": 221,
+    "scale": 0.65
+  }
+}
