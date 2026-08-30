@@ -1,63 +1,88 @@
 {
   "clock": {
     "x": 1120,
-    "y": 80,
+    "y": 40,
     "scale": 0.75,
     "style": "cookie"
   },
   "poster": {
-    "x": 40,
-    "y": 40,
+    "x": 30,
+    "y": 30,
     "scale": 0.85,
     "imagePath": "",
-    "shapeIndex": 1,
-    "caption": "My Photo",
-    "showCaption": true
+    "shapeIndex": 1
   },
   "calendar": {
-    "x": 40,
-    "y": 280,
+    "x": 30,
+    "y": 230,
     "scale": 0.85
   },
   "media": {
-    "x": 40,
-    "y": 550,
+    "x": 30,
+    "y": 460,
+    "scale": 0.85
+  },
+  "clipboard": {
+    "x": 30,
+    "y": 650,
     "scale": 0.85
   },
   "sysinfo": {
-    "x": 800,
-    "y": 40,
+    "x": 400,
+    "y": 30,
     "scale": 0.85,
-    "isVertical": true
+    "isVertical": false
+  },
+  "thermal": {
+    "x": 400,
+    "y": 160,
+    "scale": 0.85
+  },
+  "timer": {
+    "x": 640,
+    "y": 160,
+    "scale": 0.85
+  },
+  "quote": {
+    "x": 400,
+    "y": 370,
+    "scale": 0.85,
+    "index": 0
+  },
+  "todo": {
+    "x": 400,
+    "y": 520,
+    "scale": 0.85
+  },
+  "notes": {
+    "x": 660,
+    "y": 520,
+    "scale": 0.85
   },
   "battery": {
     "x": 1120,
-    "y": 340,
+    "y": 300,
     "scale": 0.95
   },
   "weather": {
     "x": 1120,
-    "y": 480,
-    "scale": 0.9
-  },
-  "quickcontrols": {
-    "x": 1120,
-    "y": 640,
+    "y": 430,
     "scale": 0.9
   },
   "network": {
-    "x": 800,
-    "y": 400,
-    "scale": 0.9
+    "x": 1120,
+    "y": 580,
+    "scale": 0.85,
+    "hideIp": false
   },
-  "notes": {
-    "x": 800,
-    "y": 560,
+  "quickcontrols": {
+    "x": 1120,
+    "y": 720,
     "scale": 0.85
   },
-  "todo": {
-    "x": 490,
-    "y": 550,
-    "scale": 0.85
+  "dock": {
+    "x": 460,
+    "y": 980,
+    "scale": 0.95
   }
 }
