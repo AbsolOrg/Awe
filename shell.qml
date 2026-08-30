@@ -34,6 +34,11 @@ ShellRoot {
                 Region { item: networkWidget }
                 Region { item: notesWidget }
                 Region { item: todoWidget }
+                Region { item: dockWidget }
+                Region { item: timerWidget }
+                Region { item: thermalWidget }
+                Region { item: quoteWidget }
+                Region { item: clipboardWidget }
             }
 
             Item {
@@ -102,6 +107,36 @@ ShellRoot {
 
                 TodoWidget {
                     id: todoWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                DockWidget {
+                    id: dockWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                TimerWidget {
+                    id: timerWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                ThermalWidget {
+                    id: thermalWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                QuoteWidget {
+                    id: quoteWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                ClipboardWidget {
+                    id: clipboardWidget
                     screenWidth: desktopWindow.width
                     screenHeight: desktopWindow.height
                 }
