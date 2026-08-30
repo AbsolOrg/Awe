@@ -43,6 +43,11 @@ ShellRoot {
                 Region { item: worldclockWidget }
                 Region { item: gitWidget }
                 Region { item: resourcewheelWidget }
+                Region { item: visualizerWidget }
+                Region { item: habitsWidget }
+                Region { item: pingWidget }
+                Region { item: storagemapWidget }
+                Region { item: calcWidget }
             }
 
             Item {
@@ -184,6 +189,41 @@ ShellRoot {
                 ResourceWheelWidget {
                     id: resourcewheelWidget
                     visible: widgetManager.widgetVisibility["resourcewheel"] !== false
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                VisualizerWidget {
+                    id: visualizerWidget
+                    visible: widgetManager.widgetVisibility["visualizer"] !== false
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                HabitsWidget {
+                    id: habitsWidget
+                    visible: widgetManager.widgetVisibility["habits"] !== false
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                PingWidget {
+                    id: pingWidget
+                    visible: widgetManager.widgetVisibility["ping"] !== false
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                StorageMapWidget {
+                    id: storagemapWidget
+                    visible: widgetManager.widgetVisibility["storagemap"] !== false
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                CalcWidget {
+                    id: calcWidget
+                    visible: widgetManager.widgetVisibility["calc"] !== false
                     screenWidth: desktopWindow.width
                     screenHeight: desktopWindow.height
                 }

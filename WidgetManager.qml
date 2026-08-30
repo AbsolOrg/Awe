@@ -36,7 +36,12 @@ Item {
         crypto: true,
         worldclock: true,
         git: true,
-        resourcewheel: true
+        resourcewheel: true,
+        visualizer: true,
+        habits: true,
+        ping: true,
+        storagemap: true,
+        calc: true
     })
 
     // ─── Settings Persistence ───
@@ -201,7 +206,12 @@ Item {
                                 { id: "crypto", label: "Crypto Ticker" },
                                 { id: "worldclock", label: "World Clock" },
                                 { id: "git", label: "Git Dashboard" },
-                                { id: "resourcewheel", label: "Resource Wheel" }
+                                { id: "resourcewheel", label: "Resource Wheel" },
+                                { id: "visualizer", label: "Audio Visualizer" },
+                                { id: "habits", label: "Habit Tracker" },
+                                { id: "ping", label: "Network Ping" },
+                                { id: "storagemap", label: "Storage Map" },
+                                { id: "calc", label: "Calculator" }
                             ]
 
                             Rectangle {

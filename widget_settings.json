@@ -1,6 +1,5 @@
 {
   "manager": {
-    "lockDragging": false,
     "visibility": {
       "clock": true,
       "poster": true,
@@ -20,7 +19,12 @@
       "crypto": true,
       "worldclock": true,
       "git": true,
-      "resourcewheel": true
+      "resourcewheel": true,
+      "visualizer": true,
+      "habits": true,
+      "ping": true,
+      "storagemap": true,
+      "calc": true
     }
   },
   "clock": {
@@ -41,21 +45,21 @@
     "y": 230,
     "scale": 0.85
   },
-  "media": {
+  "visualizer": {
     "x": 30,
     "y": 460,
+    "scale": 0.85,
+    "mode": "bars"
+  },
+  "media": {
+    "x": 30,
+    "y": 620,
     "scale": 0.85
   },
   "clipboard": {
     "x": 30,
-    "y": 650,
+    "y": 800,
     "scale": 0.85
-  },
-  "crypto": {
-    "x": 30,
-    "y": 830,
-    "scale": 0.85,
-    "activeCoin": "bitcoin"
   },
   "sysinfo": {
     "x": 400,
@@ -71,7 +75,9 @@
   "timer": {
     "x": 640,
     "y": 160,
-    "scale": 0.85
+    "scale": 0.85,
+    "mode": "focus",
+    "totalSec": 1500
   },
   "quote": {
     "x": 400,
@@ -94,9 +100,19 @@
     "y": 730,
     "scale": 0.85
   },
-  "resourcewheel": {
+  "habits": {
     "x": 660,
     "y": 730,
+    "scale": 0.85
+  },
+  "resourcewheel": {
+    "x": 400,
+    "y": 890,
+    "scale": 0.85
+  },
+  "storagemap": {
+    "x": 660,
+    "y": 890,
     "scale": 0.85
   },
   "battery": {
@@ -115,14 +131,31 @@
     "scale": 0.85,
     "hideIp": false
   },
-  "quickcontrols": {
+  "ping": {
     "x": 1120,
-    "y": 720,
+    "y": 730,
     "scale": 0.85
   },
-  "worldclock": {
+  "quickcontrols": {
     "x": 1120,
-    "y": 850,
+    "y": 880,
     "scale": 0.85
+  },
+  "calc": {
+    "x": 1400,
+    "y": 40,
+    "scale": 0.85
+  },
+  "crypto": {
+    "x": 1400,
+    "y": 330,
+    "scale": 0.85,
+    "activeCoin": "bitcoin"
+  },
+  "worldclock": {
+    "x": 1400,
+    "y": 500,
+    "scale": 0.85,
+    "shapeStyle": 0
   }
 }
