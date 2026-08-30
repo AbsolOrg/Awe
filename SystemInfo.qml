@@ -7,6 +7,9 @@ Item {
     property real screenWidth: 1920
     property real screenHeight: 1080
 
+    // Orientation toggle (false = horizontal, true = vertical)
+    property bool isVertical: false
+
     // Position & sizing properties
     property real posX: 40
     property real posY: 40
@@ -14,8 +17,8 @@ Item {
 
     x: Math.max(10, Math.min(root.screenWidth - root.width - 10, posX))
     y: Math.max(10, Math.min(root.screenHeight - root.height - 10, posY))
-    width: Math.round(380 * scaleFactor)
-    height: Math.round(130 * scaleFactor)
+    width: Math.round((isVertical ? 120 : 380) * scaleFactor)
+    height: Math.round((isVertical ? 384 : 120) * scaleFactor)
 
     // ─── Settings Persistence ───
     Process {
@@ -27,9 +30,12 @@ Item {
                 try {
                     var data = JSON.parse(text)
                     if (data.sysinfo) {
+                        if (data.sysinfo.isVertical !== undefined) root.isVertical = data.sysinfo.isVertical
                         if (data.sysinfo.scale !== undefined) root.scaleFactor = Math.max(0.5, Math.min(2.5, data.sysinfo.scale))
-                        var w = Math.round(380 * root.scaleFactor)
-                        var h = Math.round(130 * root.scaleFactor)
+                        var baseW = root.isVertical ? 120 : 380
+                        var baseH = root.isVertical ? 384 : 120
+                        var w = Math.round(baseW * root.scaleFactor)
+                        var h = Math.round(baseH * root.scaleFactor)
                         if (data.sysinfo.x !== undefined) root.posX = Math.max(10, Math.min(root.screenWidth - w - 10, data.sysinfo.x))
                         if (data.sysinfo.y !== undefined) root.posY = Math.max(10, Math.min(root.screenHeight - h - 10, data.sysinfo.y))
                     }
@@ -44,7 +50,7 @@ Item {
     }
 
     function saveSettings() {
-        var script = "python3 -c 'import json, os; p=os.path.expanduser(\"~/.config/quickshell/widget_settings.json\"); d=json.load(open(p)) if os.path.exists(p) else {}; d[\"sysinfo\"]={\"x\":" + Math.round(root.x) + ",\"y\":" + Math.round(root.y) + ",\"scale\":" + root.scaleFactor.toFixed(2) + "}; open(p,\"w\").write(json.dumps(d,indent=2))'"
+        var script = "python3 -c 'import json, os; p=os.path.expanduser(\"~/.config/quickshell/widget_settings.json\"); d=json.load(open(p)) if os.path.exists(p) else {}; d[\"sysinfo\"]={\"x\":" + Math.round(root.x) + ",\"y\":" + Math.round(root.y) + ",\"scale\":" + root.scaleFactor.toFixed(2) + ",\"isVertical\":" + (root.isVertical ? "True" : "False") + "}; open(p,\"w\").write(json.dumps(d,indent=2))'"
         saveSettingsProc.command = ["sh", "-c", script]
         saveSettingsProc.running = true
     }
@@ -54,7 +60,7 @@ Item {
         diskProc.running = true
     }
 
-    // ─── Material Theme Palette (Matching Image 2 Slate Aesthetics) ───
+    // ─── Material Theme Palette ───
     readonly property color colBgTile: "#3A454B"           // Dark Slate Tile Background
     readonly property color colBadgeBg: "#4D585F"          // Lighter Slate Badge Fill
     readonly property color colTextPrimary: "#FFFFFF"
@@ -150,14 +156,16 @@ Item {
     // ─── Scaled Visual Content ───
     Item {
         id: scaledContent
-        width: 380
-        height: 130
+        width: root.isVertical ? 120 : 380
+        height: root.isVertical ? 384 : 120
         scale: root.scaleFactor
         transformOrigin: Item.TopLeft
 
-        // ─── 3 Curved Squircle Tiles (CPU, RAM, Disk) ───
-        Row {
+        // Dynamic Layout Container (Row for horizontal, Column for vertical)
+        Grid {
             anchors.fill: parent
+            columns: root.isVertical ? 1 : 3
+            rows: root.isVertical ? 3 : 1
             spacing: 12
 
             // ─── Tile 1: CPU Widget ───
@@ -422,6 +430,11 @@ Item {
         drag.minimumY: 10
         drag.maximumY: Math.max(10, root.screenHeight - root.height - 10)
         cursorShape: drag.active ? Qt.ClosedHandCursor : (containsMouse ? Qt.OpenHandCursor : Qt.ArrowCursor)
+
+        onDoubleClicked: {
+            root.isVertical = !root.isVertical
+            root.saveSettings()
+        }
 
         onReleased: {
             root.posX = root.x
