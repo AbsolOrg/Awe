@@ -1,8 +1,10 @@
 # Awe
 
-Awe is a curated collection of standalone, interactive Material 3 desktop widgets built with [Quickshell](https://quickshell.outfoxxed.me/) for Linux and Wayland compositors.
+- Awe is a curated collection of standalone, interactive Material 3 desktop widgets built with [Quickshell](https://quickshell.outfoxxed.me/) for Linux and Wayland compositors.
 
-Each widget is an independent QML component that can be moved, scaled, customized, and toggled across your desktop with persistent configuration.
+- Each widget is an independent QML component that can be moved, scaled, customized, and toggled across your desktop with persistent configuration.
+
+<img width="1361" height="761" alt="all" src="https://github.com/user-attachments/assets/9157fbae-828a-4026-8209-318440a4876c" />
 
 ---
 
