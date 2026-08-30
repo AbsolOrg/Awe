@@ -30,6 +30,10 @@ ShellRoot {
                 Region { item: weatherWidget }
                 Region { item: posterWidget }
                 Region { item: batteryWidget }
+                Region { item: volumeWidget }
+                Region { item: networkWidget }
+                Region { item: notesWidget }
+                Region { item: todoWidget }
             }
 
             Item {
@@ -74,6 +78,30 @@ ShellRoot {
 
                 BatteryWidget {
                     id: batteryWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                VolumeBrightnessWidget {
+                    id: volumeWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                NetworkWidget {
+                    id: networkWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                NotesWidget {
+                    id: notesWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                TodoWidget {
+                    id: todoWidget
                     screenWidth: desktopWindow.width
                     screenHeight: desktopWindow.height
                 }

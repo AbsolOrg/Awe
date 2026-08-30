@@ -8,14 +8,14 @@ Item {
     property real screenHeight: 1080
 
     // Position & sizing properties
-    property real posX: 10
-    property real posY: 517
-    property real scaleFactor: 0.8
+    property real posX: 40
+    property real posY: 550
+    property real scaleFactor: 0.85
 
     x: Math.max(10, Math.min(root.screenWidth - root.width - 10, posX))
     y: Math.max(10, Math.min(root.screenHeight - root.height - 10, posY))
-    width: Math.round(380 * scaleFactor)
-    height: Math.round(190 * scaleFactor)
+    width: Math.round(390 * scaleFactor)
+    height: Math.round(195 * scaleFactor)
 
     // ─── Settings Persistence ───
     Process {
@@ -28,8 +28,8 @@ Item {
                     var data = JSON.parse(text)
                     if (data.media) {
                         if (data.media.scale !== undefined) root.scaleFactor = Math.max(0.5, Math.min(2.5, data.media.scale))
-                        var w = Math.round(380 * root.scaleFactor)
-                        var h = Math.round(190 * root.scaleFactor)
+                        var w = Math.round(390 * root.scaleFactor)
+                        var h = Math.round(195 * root.scaleFactor)
                         if (data.media.x !== undefined) root.posX = Math.max(10, Math.min(root.screenWidth - w - 10, data.media.x))
                         if (data.media.y !== undefined) root.posY = Math.max(10, Math.min(root.screenHeight - h - 10, data.media.y))
                     }
@@ -49,31 +49,31 @@ Item {
         saveSettingsProc.running = true
     }
 
-    // ─── Built-in Demo Playlist for Seamless Playback ───
-    property var demoTracks: [
-        { title: "Pretty Patterns", artist: "ATLAS", duration: 225 },
-        { title: "Midnight Horizon", artist: "Pixel Waves", duration: 198 },
-        { title: "Summer Breeze", artist: "California Drive", duration: 240 },
-        { title: "Neon Sunset", artist: "Studio M3", duration: 210 }
-    ]
-    property int currentDemoTrackIndex: 0
-
-    // ─── Media State Properties ───
-    property string title: "Pretty Patterns"
-    property string artist: "ATLAS"
-    property string artUrl: ""
-    property string status: "Playing"
-    property real positionSec: 72
-    property real lengthSec: 225
-    property string posStr: "1:12"
-    property string lenStr: "3:45"
-    property real progress: 0.32
+    // ─── Real MPRIS Media State Properties ───
     property bool hasActivePlayer: false
+    property string title: "No Media Playing"
+    property string artist: "Ready for playback"
+    property string artUrl: ""
+    property string status: "Stopped"
+    property string playerName: "Media"
+    property real positionSec: 0
+    property real lengthSec: 0
+    property string posStr: "0:00"
+    property string lenStr: "0:00"
+    property real progress: 0.0
+    property real wavePhase: 0.0
 
     function fmtTime(seconds) {
+        if (!seconds || seconds <= 0 || isNaN(seconds)) return "0:00"
         var m = Math.floor(seconds / 60)
         var s = Math.floor(seconds % 60)
         return m + ":" + (s < 10 ? "0" + s : s)
+    }
+
+    function updateTimes() {
+        root.posStr = root.fmtTime(root.positionSec)
+        root.lenStr = root.lengthSec > 0 ? root.fmtTime(root.lengthSec) : "0:00"
+        root.progress = (root.lengthSec > 0) ? Math.min(1.0, Math.max(0, root.positionSec / root.lengthSec)) : 0
     }
 
     // Process for executing media commands
@@ -83,76 +83,62 @@ Item {
     }
 
     function sendMediaCmd(action) {
-        if (hasActivePlayer) {
-            if (action === "play-pause") controlProc.command = ["playerctl", "play-pause"]
-            else if (action === "next") controlProc.command = ["playerctl", "next"]
-            else if (action === "previous") controlProc.command = ["playerctl", "previous"]
-            else if (action === "rewind") controlProc.command = ["playerctl", "position", "10-"]
-            else if (action === "forward") controlProc.command = ["playerctl", "position", "10+"]
-            controlProc.running = true
-        } else {
-            // Built-in Player Simulation when no system MPRIS player is running
-            if (action === "play-pause") {
-                root.status = (root.status === "Playing") ? "Paused" : "Playing"
-            } else if (action === "next") {
-                root.currentDemoTrackIndex = (root.currentDemoTrackIndex + 1) % root.demoTracks.length
-                var nextTrk = root.demoTracks[root.currentDemoTrackIndex]
-                root.title = nextTrk.title
-                root.artist = nextTrk.artist
-                root.lengthSec = nextTrk.duration
-                root.positionSec = 0
-            } else if (action === "previous") {
-                root.currentDemoTrackIndex = (root.currentDemoTrackIndex - 1 + root.demoTracks.length) % root.demoTracks.length
-                var prevTrk = root.demoTracks[root.currentDemoTrackIndex]
-                root.title = prevTrk.title
-                root.artist = prevTrk.artist
-                root.lengthSec = prevTrk.duration
-                root.positionSec = 0
-            } else if (action === "rewind") {
-                root.positionSec = Math.max(0, root.positionSec - 10)
-            } else if (action === "forward") {
-                root.positionSec = Math.min(root.lengthSec, root.positionSec + 10)
-            }
-            root.updateTimes()
-        }
+        if (action === "play-pause") controlProc.command = ["playerctl", "play-pause"]
+        else if (action === "next") controlProc.command = ["playerctl", "next"]
+        else if (action === "previous") controlProc.command = ["playerctl", "previous"]
+        else if (action === "rewind") controlProc.command = ["playerctl", "position", "10-"]
+        else if (action === "forward") controlProc.command = ["playerctl", "position", "10+"]
+        controlProc.running = true
+        // Query immediately after command
+        queryTimer.start()
     }
 
-    function updateTimes() {
-        root.posStr = root.fmtTime(root.positionSec)
-        root.lenStr = root.lengthSec > 0 ? root.fmtTime(root.lengthSec) : "0:00"
-        root.progress = root.lengthSec > 0 ? Math.min(1.0, root.positionSec / root.lengthSec) : 0
+    Timer {
+        id: queryTimer
+        interval: 300
+        repeat: false
+        onTriggered: mediaProc.running = true
     }
 
     // ─── MPRIS Process Query ───
     Process {
         id: mediaProc
-        command: ["playerctl", "metadata", "--format", "{{title}};;{{artist}};;{{mpris:artUrl}};;{{position}};;{{mpris:length}};;{{status}}"]
+        command: ["playerctl", "metadata", "--format", "{{playerName}};;{{title}};;{{artist}};;{{mpris:artUrl}};;{{position}};;{{mpris:length}};;{{status}}"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
                 var line = text.trim()
-                if (line.length > 0 && line.includes(";;") && !line.includes("No players found")) {
+                if (line.length > 0 && line.includes(";;") && !line.includes("No players found") && !line.includes("No player could handle")) {
                     var parts = line.split(";;")
                     root.hasActivePlayer = true
-                    root.title = parts[0] || "Unknown Title"
-                    root.artist = parts[1] || "Unknown Artist"
-                    root.artUrl = parts[2] || ""
+                    root.playerName = (parts[0] || "Media").replace(/^[a-z]/, (c) => c.toUpperCase())
+                    root.title = (parts[1] && parts[1].trim().length > 0) ? parts[1].trim() : "Unknown Title"
+                    root.artist = (parts[2] && parts[2].trim().length > 0) ? parts[2].trim() : "Unknown Artist"
+                    root.artUrl = parts[3] || ""
 
-                    var posMicro = parseFloat(parts[3]) || 0
-                    var lenMicro = parseFloat(parts[4]) || 0
+                    var posMicro = parseFloat(parts[4]) || 0
+                    var lenMicro = parseFloat(parts[5]) || 0
                     root.positionSec = posMicro / 1000000.0
                     root.lengthSec = lenMicro / 1000000.0
-                    root.status = parts[5] || "Playing"
+                    root.status = parts[6] || "Playing"
 
                     root.updateTimes()
                 } else {
                     root.hasActivePlayer = false
+                    root.status = "Stopped"
+                    root.title = "No Media Playing"
+                    root.artist = "Ready for playback"
+                    root.artUrl = ""
+                    root.positionSec = 0
+                    root.lengthSec = 0
+                    root.progress = 0
+                    root.updateTimes()
                 }
             }
         }
     }
 
-    // Playback Progress Timer
+    // Progress Polling Timer
     Timer {
         interval: 1000
         running: true
@@ -160,10 +146,21 @@ Item {
         triggeredOnStart: true
         onTriggered: {
             mediaProc.running = true
-            if (!root.hasActivePlayer && root.status === "Playing") {
-                root.positionSec = (root.positionSec + 1) % (root.lengthSec + 1)
+            if (root.hasActivePlayer && root.status === "Playing") {
+                root.positionSec = Math.min(root.lengthSec, root.positionSec + 1)
                 root.updateTimes()
             }
+        }
+    }
+
+    // Squiggly Wave Animation Timer (ONLY runs when real media is actually playing)
+    Timer {
+        interval: 35
+        running: root.hasActivePlayer && root.status === "Playing"
+        repeat: true
+        onTriggered: {
+            root.wavePhase = (root.wavePhase + 0.15) % (Math.PI * 2)
+            waveSeekCanvas.requestPaint()
         }
     }
 
@@ -172,26 +169,55 @@ Item {
         mediaProc.running = true
     }
 
-    // ─── Material You / M3 Dark Palette ───
-    readonly property color colBg: "#2B353A"              // Android Pixel Dark Slate Card
-    readonly property color colPillBg: "#3D484E"          // Control Pill / Inactive Track
-    readonly property color colAccent: "#C2E7FF"          // M3 Light Cyan Active Accent
-    readonly property color colAccentDark: "#1E2A30"      // Dark Fill for Scalloped Button Icon
+    // ─── Material 3 Dark Slate Palette ───
+    readonly property color colBg: "#232D33"              // Material 3 Dark Slate Surface
+    readonly property color colPillBg: "#303B42"          // Control Pill / Inactive Track
+    readonly property color colAccent: "#C2E7FF"          // M3 Cyan Accent
+    readonly property color colAccentDark: "#003549"      // Dark Fill for Scalloped Button Icon
     readonly property color colTextPrimary: "#E1E2E5"
-    readonly property color colTextSecondary: "#A0ACAC"
+    readonly property color colTextSecondary: "#9CA8AC"
 
     // ─── Scaled Visual Content ───
     Item {
         id: scaledContent
-        width: 380
-        height: 190
+        width: 390
+        height: 195
         scale: root.scaleFactor
         transformOrigin: Item.TopLeft
 
+        // Drag MouseArea on Card Background (Underneath controls)
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            drag.target: root
+            drag.axis: Drag.XAndYAxis
+            drag.minimumX: 10
+            drag.maximumX: Math.max(10, root.screenWidth - root.width - 10)
+            drag.minimumY: 10
+            drag.maximumY: Math.max(10, root.screenHeight - root.height - 10)
+            cursorShape: drag.active ? Qt.ClosedHandCursor : (containsMouse ? Qt.OpenHandCursor : Qt.ArrowCursor)
+
+            onReleased: {
+                root.posX = root.x
+                root.posY = root.y
+                root.saveSettings()
+            }
+
+            onWheel: (wheel) => {
+                var delta = wheel.angleDelta.y / 1200.0
+                var newScale = Math.max(0.5, Math.min(2.5, root.scaleFactor + delta))
+                root.scaleFactor = Math.round(newScale * 100) / 100
+                root.saveSettings()
+            }
+        }
+
+        // Main Material 3 Card
         Rectangle {
             anchors.fill: parent
             color: root.colBg
-            radius: 28
+            radius: 32
+            border.color: "#37434A"
+            border.width: 1.5
             antialiasing: true
 
             Column {
@@ -199,16 +225,16 @@ Item {
                 anchors.margins: 14
                 spacing: 10
 
-                // Top Section: Album Art + Song Title/Artist
+                // ─── Top Section: Album Art + Track Info + Soundwave Equalizer ───
                 Row {
                     width: parent.width
-                    height: 80
+                    height: 72
                     spacing: 12
 
-                    // Album Art Squircle
+                    // Album Art Squircle / Vinyl
                     Rectangle {
-                        width: 80
-                        height: 80
+                        width: 72
+                        height: 72
                         radius: 20
                         color: root.colPillBg
                         clip: true
@@ -222,14 +248,14 @@ Item {
                             asynchronous: true
                         }
 
-                        // Pixel Fallback Vector Art
+                        // Pixel Material Fallback Graphic (Headphones / Music Note)
                         Item {
                             anchors.fill: parent
                             visible: !root.artUrl || root.artUrl.length === 0
 
                             Rectangle {
                                 anchors.fill: parent
-                                color: "#3B474D"
+                                color: "#2B363C"
                             }
 
                             Canvas {
@@ -238,39 +264,112 @@ Item {
                                 onPaint: {
                                     var ctx = getContext("2d")
                                     ctx.reset()
-                                    ctx.fillStyle = "#A2C9C2"
+                                    var cx = width / 2
+                                    var cy = height / 2
+
+                                    // Outer headphone arch
+                                    ctx.strokeStyle = root.hasActivePlayer ? root.colAccent : "#809292"
+                                    ctx.lineWidth = 2.5
+                                    ctx.lineCap = "round"
                                     ctx.beginPath()
-                                    ctx.arc(40, 40, 26, 0, Math.PI * 2)
-                                    ctx.fill()
-                                    ctx.fillStyle = "#2B353A"
+                                    ctx.arc(cx, cy - 2, 16, Math.PI, 0)
+                                    ctx.stroke()
+
+                                    // Left & right ear pads
+                                    ctx.fillStyle = root.hasActivePlayer ? root.colAccent : "#809292"
                                     ctx.beginPath()
-                                    ctx.arc(40, 40, 9, 0, Math.PI * 2)
+                                    ctx.arc(cx - 15, cy - 2, 4.5, 0, Math.PI * 2)
+                                    ctx.arc(cx + 15, cy - 2, 4.5, 0, Math.PI * 2)
                                     ctx.fill()
                                 }
                             }
                         }
                     }
 
-                    // Title & Artist Column
+                    // Track Title, Artist, Player Badge, & Equalizer
                     Column {
-                        width: parent.width - 80 - 12
+                        width: parent.width - 72 - 12
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
 
+                        // Row with Player Pill and Equalizer
+                        Row {
+                            width: parent.width
+
+                            // Player Pill Tag
+                            Rectangle {
+                                height: 18
+                                width: playerRow.implicitWidth + 12
+                                radius: 9
+                                color: root.colPillBg
+                                antialiasing: true
+
+                                Row {
+                                    id: playerRow
+                                    anchors.centerIn: parent
+                                    spacing: 4
+
+                                    Rectangle {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 5
+                                        height: 5
+                                        radius: 2.5
+                                        color: (root.hasActivePlayer && root.status === "Playing") ? "#A2C9C2" : "#6E7C82"
+                                    }
+
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: root.hasActivePlayer ? root.playerName : "Ready"
+                                        color: root.colTextSecondary
+                                        font.pixelSize: 9
+                                        font.bold: true
+                                        font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
+                                    }
+                                }
+                            }
+
+                            Item {
+                                width: Math.max(0, parent.width - parent.children[0].width - eqRow.width)
+                                height: 1
+                            }
+
+                            // Animated Equalizer Visualizer Bars (Only visible when actually playing)
+                            Row {
+                                id: eqRow
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 3
+                                visible: root.hasActivePlayer && root.status === "Playing"
+
+                                Repeater {
+                                    model: 4
+                                    Rectangle {
+                                        width: 3
+                                        height: 6 + Math.abs(Math.sin(root.wavePhase + index * 1.2)) * 10
+                                        radius: 1.5
+                                        color: root.colAccent
+                                        anchors.bottom: parent.bottom
+                                        antialiasing: true
+                                    }
+                                }
+                            }
+                        }
+
+                        // Track Title
                         Text {
                             text: root.title
-                            color: root.colTextPrimary
-                            font.pixelSize: 16
+                            color: root.hasActivePlayer ? root.colTextPrimary : "#8D9A9E"
+                            font.pixelSize: 15
                             font.bold: true
                             elide: Text.ElideRight
                             width: parent.width
                             font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
                         }
 
+                        // Artist Name
                         Text {
                             text: root.artist
                             color: root.colTextSecondary
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             elide: Text.ElideRight
                             width: parent.width
                             font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
@@ -278,38 +377,75 @@ Item {
                     }
                 }
 
-                // Middle Section: Material 3 Progress Track with Thumb Handle
+                // ─── Middle Section: Android 14/15 Squiggly Wavy Seekbar ───
                 Column {
                     width: parent.width
-                    spacing: 4
+                    spacing: 3
 
                     Item {
                         id: progressTrack
                         width: parent.width
-                        height: 14
+                        height: 18
 
-                        // Inactive Track
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width
-                            height: 6
-                            radius: 3
-                            color: root.colPillBg
+                        // Squiggly Wave Canvas
+                        Canvas {
+                            id: waveSeekCanvas
+                            anchors.fill: parent
                             antialiasing: true
+
+                            Connections {
+                                target: root
+                                function onProgressChanged() { waveSeekCanvas.requestPaint() }
+                                function onStatusChanged() { waveSeekCanvas.requestPaint() }
+                            }
+
+                            onPaint: {
+                                var ctx = getContext("2d")
+                                ctx.reset()
+                                var cy = height / 2
+                                var totalW = width
+                                var isPlaying = root.hasActivePlayer && root.status === "Playing"
+                                var playedW = Math.max(0, Math.min(totalW, totalW * root.progress))
+
+                                // Draw Inactive Base Track (Right side)
+                                ctx.strokeStyle = root.colPillBg
+                                ctx.lineWidth = 4
+                                ctx.lineCap = "round"
+                                ctx.beginPath()
+                                ctx.moveTo(Math.max(playedW, 6), cy)
+                                ctx.lineTo(totalW - 2, cy)
+                                ctx.stroke()
+
+                                // Draw Active Wave Track (Left side)
+                                if (playedW > 0) {
+                                    ctx.strokeStyle = root.colAccent
+                                    ctx.lineWidth = 4
+                                    ctx.lineCap = "round"
+                                    ctx.lineJoin = "round"
+                                    ctx.beginPath()
+
+                                    if (isPlaying) {
+                                        // Sine wave path
+                                        var wavelength = 18.0
+                                        var amplitude = 3.2
+                                        ctx.moveTo(2, cy)
+                                        for (var x = 2; x <= playedW; x += 2) {
+                                            var y = cy + Math.sin((x / wavelength) * Math.PI * 2 + root.wavePhase) * amplitude
+                                            ctx.lineTo(x, y)
+                                        }
+                                    } else {
+                                        // Straight flat pill path when paused / stopped
+                                        ctx.moveTo(2, cy)
+                                        ctx.lineTo(playedW, cy)
+                                    }
+                                    ctx.stroke()
+                                }
+                            }
                         }
 
-                        // Active Track (Accent Pill)
+                        // M3 Slider Thumb Handle
                         Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: Math.max(6, parent.width * root.progress)
-                            height: 6
-                            radius: 3
-                            color: root.colAccent
-                            antialiasing: true
-                        }
-
-                        // M3 Slider Thumb Handle Indicator
-                        Rectangle {
+                            visible: root.hasActivePlayer && root.lengthSec > 0
                             width: 6
                             height: 14
                             radius: 3
@@ -319,15 +455,17 @@ Item {
                             antialiasing: true
                         }
 
-                        // Interactive Seek Click/Drag
+                        // Interactive Seek MouseArea
                         MouseArea {
                             anchors.fill: parent
+                            cursorShape: (root.hasActivePlayer && root.lengthSec > 0) ? Qt.PointingHandCursor : Qt.ArrowCursor
                             onClicked: (mouse) => {
-                                var ratio = Math.max(0, Math.min(1.0, mouse.x / width))
-                                root.progress = ratio
-                                root.positionSec = Math.round(ratio * root.lengthSec)
-                                root.updateTimes()
-                                if (root.hasActivePlayer) {
+                                if (root.hasActivePlayer && root.lengthSec > 0) {
+                                    var ratio = Math.max(0, Math.min(1.0, mouse.x / width))
+                                    root.progress = ratio
+                                    root.positionSec = Math.round(ratio * root.lengthSec)
+                                    root.updateTimes()
+                                    waveSeekCanvas.requestPaint()
                                     controlProc.command = ["playerctl", "position", root.positionSec]
                                     controlProc.running = true
                                 }
@@ -362,7 +500,7 @@ Item {
                     }
                 }
 
-                // Bottom Section: Complete Playback Controls Row (Rewind, Prev, Play/Pause Scallop, Next, Forward)
+                // ─── Bottom Section: Complete Playback Controls Row ───
                 Rectangle {
                     width: parent.width
                     height: 48
@@ -372,12 +510,14 @@ Item {
 
                     Row {
                         anchors.centerIn: parent
-                        spacing: 12
+                        spacing: 14
 
                         // Rewind (-10s) Vector Button
-                        Item {
+                        Rectangle {
                             width: 32
                             height: 32
+                            radius: 16
+                            color: rewArea.containsMouse ? "#3E4C54" : "transparent"
                             anchors.verticalCenter: parent.verticalCenter
 
                             Canvas {
@@ -408,15 +548,20 @@ Item {
                             }
 
                             MouseArea {
+                                id: rewArea
                                 anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: root.sendMediaCmd("rewind")
                             }
                         }
 
                         // Previous Track Vector Button
-                        Item {
+                        Rectangle {
                             width: 32
                             height: 32
+                            radius: 16
+                            color: prevArea.containsMouse ? "#3E4C54" : "transparent"
                             anchors.verticalCenter: parent.verticalCenter
 
                             Canvas {
@@ -437,7 +582,10 @@ Item {
                             }
 
                             MouseArea {
+                                id: prevArea
                                 anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: root.sendMediaCmd("previous")
                             }
                         }
@@ -456,6 +604,7 @@ Item {
                                 Connections {
                                     target: root
                                     function onStatusChanged() { scallopCanvas.requestPaint() }
+                                    function onHasActivePlayerChanged() { scallopCanvas.requestPaint() }
                                 }
 
                                 onPaint: {
@@ -483,7 +632,7 @@ Item {
 
                                     // Vector Play / Pause Icon
                                     ctx.fillStyle = root.colAccentDark
-                                    if (root.status === "Playing") {
+                                    if (root.hasActivePlayer && root.status === "Playing") {
                                         ctx.fillRect(cx - 5.5, cy - 7, 4, 14)
                                         ctx.fillRect(cx + 1.5, cy - 7, 4, 14)
                                     } else {
@@ -499,14 +648,17 @@ Item {
 
                             MouseArea {
                                 anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: root.sendMediaCmd("play-pause")
                             }
                         }
 
                         // Next Track Vector Button
-                        Item {
+                        Rectangle {
                             width: 32
                             height: 32
+                            radius: 16
+                            color: nextArea.containsMouse ? "#3E4C54" : "transparent"
                             anchors.verticalCenter: parent.verticalCenter
 
                             Canvas {
@@ -527,15 +679,20 @@ Item {
                             }
 
                             MouseArea {
+                                id: nextArea
                                 anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: root.sendMediaCmd("next")
                             }
                         }
 
                         // Forward (+10s) Vector Button
-                        Item {
+                        Rectangle {
                             width: 32
                             height: 32
+                            radius: 16
+                            color: fwdArea.containsMouse ? "#3E4C54" : "transparent"
                             anchors.verticalCenter: parent.verticalCenter
 
                             Canvas {
@@ -566,39 +723,16 @@ Item {
                             }
 
                             MouseArea {
+                                id: fwdArea
                                 anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: root.sendMediaCmd("forward")
                             }
                         }
                     }
                 }
             }
-        }
-    }
-
-    // ─── Drag & Resize MouseArea ───
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        drag.target: root
-        drag.axis: Drag.XAndYAxis
-        drag.minimumX: 10
-        drag.maximumX: Math.max(10, root.screenWidth - root.width - 10)
-        drag.minimumY: 10
-        drag.maximumY: Math.max(10, root.screenHeight - root.height - 10)
-        cursorShape: drag.active ? Qt.ClosedHandCursor : (containsMouse ? Qt.OpenHandCursor : Qt.ArrowCursor)
-
-        onReleased: {
-            root.posX = root.x
-            root.posY = root.y
-            root.saveSettings()
-        }
-
-        onWheel: (wheel) => {
-            var delta = wheel.angleDelta.y / 1200.0
-            var newScale = Math.max(0.5, Math.min(2.5, root.scaleFactor + delta))
-            root.scaleFactor = Math.round(newScale * 100) / 100
-            root.saveSettings()
         }
     }
 }
