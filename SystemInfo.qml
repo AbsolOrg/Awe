@@ -165,7 +165,6 @@ Item {
         Grid {
             anchors.fill: parent
             columns: root.isVertical ? 1 : 3
-            rows: root.isVertical ? 3 : 1
             spacing: 12
 
             // ─── Tile 1: CPU Widget ───

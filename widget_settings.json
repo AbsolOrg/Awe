@@ -1,33 +1,63 @@
 {
   "clock": {
-    "x": 513,
-    "y": 257,
-    "scale": 0.8,
-    "style": "scallop"
-  },
-  "sysinfo": {
-    "x": 15,
-    "y": 43,
-    "scale": 0.95
-  },
-  "calendar": {
-    "x": 929,
-    "y": 134,
-    "scale": 1.1
-  },
-  "media": {
-    "x": 10,
-    "y": 517,
-    "scale": 0.65
-  },
-  "weather": {
-    "x": 10,
-    "y": 352,
-    "scale": 0.9
+    "x": 1120,
+    "y": 80,
+    "scale": 0.75,
+    "style": "cookie"
   },
   "poster": {
-    "x": 10,
-    "y": 221,
-    "scale": 0.65
+    "x": 40,
+    "y": 40,
+    "scale": 0.85,
+    "imagePath": "",
+    "shapeIndex": 1,
+    "caption": "My Photo",
+    "showCaption": true
+  },
+  "calendar": {
+    "x": 40,
+    "y": 280,
+    "scale": 0.85
+  },
+  "media": {
+    "x": 40,
+    "y": 550,
+    "scale": 0.85
+  },
+  "sysinfo": {
+    "x": 800,
+    "y": 40,
+    "scale": 0.85,
+    "isVertical": true
+  },
+  "battery": {
+    "x": 1120,
+    "y": 340,
+    "scale": 0.95
+  },
+  "weather": {
+    "x": 1120,
+    "y": 480,
+    "scale": 0.9
+  },
+  "quickcontrols": {
+    "x": 1120,
+    "y": 640,
+    "scale": 0.9
+  },
+  "network": {
+    "x": 800,
+    "y": 400,
+    "scale": 0.9
+  },
+  "notes": {
+    "x": 800,
+    "y": 560,
+    "scale": 0.85
+  },
+  "todo": {
+    "x": 490,
+    "y": 550,
+    "scale": 0.85
   }
 }
