@@ -243,10 +243,10 @@ Item {
                     ctx.font = "bold 12px 'Google Sans', sans-serif"
                     ctx.textAlign = "center"
                     ctx.textBaseline = "middle"
-                    ctx.fillText("Right-click to select pic", width / 2, height / 2 - 8)
+                    ctx.fillText("Click to select pic", width / 2, height / 2 - 8)
                     ctx.fillStyle = "#A0ACAC"
                     ctx.font = "11px 'Google Sans', sans-serif"
-                    ctx.fillText("Left-click for shape", width / 2, height / 2 + 12)
+                    ctx.fillText("Double-tap for shape", width / 2, height / 2 + 12)
                 }
             }
         }
@@ -288,6 +288,17 @@ Item {
         }
     }
 
+    // Timer to differentiate single click vs double tap smoothly
+    Timer {
+        id: singleClickTimer
+        interval: 220
+        repeat: false
+        onTriggered: {
+            // Single tap: open file manager to pick an image
+            pickerProc.running = true
+        }
+    }
+
     // ─── Mouse Handling ───
     MouseArea {
         anchors.fill: parent
@@ -301,13 +312,23 @@ Item {
         drag.maximumY: Math.max(10, root.screenHeight - root.height - 10)
         cursorShape: drag.active ? Qt.ClosedHandCursor : (containsMouse ? Qt.OpenHandCursor : Qt.ArrowCursor)
 
+        onDoubleClicked: (mouse) => {
+            if (mouse.button === Qt.LeftButton) {
+                singleClickTimer.stop()
+                root.showContextMenu = false
+                // Double tap: change shape
+                root.shapeIndex = (root.shapeIndex + 1) % root.shapeNames.length
+                root.saveSettings()
+            }
+        }
+
         onClicked: (mouse) => {
             if (mouse.button === Qt.RightButton) {
+                singleClickTimer.stop()
                 root.showContextMenu = !root.showContextMenu
             } else if (mouse.button === Qt.LeftButton) {
                 root.showContextMenu = false
-                root.shapeIndex = (root.shapeIndex + 1) % root.shapeNames.length
-                root.saveSettings()
+                singleClickTimer.start()
             }
         }
 
