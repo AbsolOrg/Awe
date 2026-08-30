@@ -117,11 +117,11 @@ Item {
         mediaProc.running = true
     }
 
-    // ─── Material / Pixel Dark Palette ───
+    // ─── Material You / M3 Palette ───
     readonly property color colBg: "#2B353A"              // Android Pixel Dark Slate Card
-    readonly property color colPillBg: "#3D484E"          // Control Pill Background
-    readonly property color colAccent: "#C2E7FF"          // Pixel Light Cyan/Green Accent
-    readonly property color colAccentDark: "#1E2A30"      // Dark Text on Accent
+    readonly property color colPillBg: "#3D484E"          // Control Pill / Inactive Track
+    readonly property color colAccent: "#C2E7FF"          // M3 Light Cyan Active Accent
+    readonly property color colAccentDark: "#1E2A30"      // Dark Fill for Scalloped Button Icon
     readonly property color colTextPrimary: "#E1E2E5"
     readonly property color colTextSecondary: "#A0ACAC"
 
@@ -142,7 +142,7 @@ Item {
             Column {
                 anchors.fill: parent
                 anchors.margins: 14
-                spacing: 10
+                spacing: 12
 
                 // Top Header: Album Art + Track Info + Media Controls Pill
                 Row {
@@ -235,16 +235,27 @@ Item {
                             anchors.centerIn: parent
                             spacing: 4
 
-                            // Previous Track
+                            // Previous Track Vector Icon
                             Item {
                                 width: 28
                                 height: 28
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "⏮"
-                                    color: root.colTextPrimary
-                                    font.pixelSize: 13
+                                Canvas {
+                                    anchors.fill: parent
+                                    antialiasing: true
+                                    onPaint: {
+                                        var ctx = getContext("2d")
+                                        ctx.reset()
+                                        ctx.fillStyle = root.colTextPrimary
+                                        // Previous track double triangle / bar
+                                        ctx.beginPath()
+                                        ctx.fillRect(8, 8, 2, 12)
+                                        ctx.moveTo(19, 8)
+                                        ctx.lineTo(11, 14)
+                                        ctx.lineTo(19, 20)
+                                        ctx.closePath()
+                                        ctx.fill()
+                                    }
                                 }
 
                                 MouseArea {
@@ -256,25 +267,31 @@ Item {
                                 }
                             }
 
-                            // Scalloped Play / Pause Button (Pixel Style)
+                            // Scalloped Play / Pause Button (Pixel M3 Style)
                             Item {
-                                width: 36
-                                height: 36
+                                width: 38
+                                height: 38
 
                                 Canvas {
                                     id: scallopCanvas
                                     anchors.fill: parent
                                     antialiasing: true
 
+                                    Connections {
+                                        target: root
+                                        function onStatusChanged() { scallopCanvas.requestPaint() }
+                                    }
+
                                     onPaint: {
                                         var ctx = getContext("2d")
                                         ctx.reset()
                                         var cx = width / 2
                                         var cy = height / 2
-                                        var rOuter = 17
-                                        var rInner = 14
+                                        var rOuter = 18
+                                        var rInner = 15
                                         var points = 12
 
+                                        // Scalloped Background
                                         ctx.beginPath()
                                         for (var i = 0; i < points * 2; i++) {
                                             var angle = (i * Math.PI) / points
@@ -287,15 +304,23 @@ Item {
                                         ctx.closePath()
                                         ctx.fillStyle = root.colAccent
                                         ctx.fill()
-                                    }
-                                }
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: root.status === "Playing" ? "❚❚" : "▶"
-                                    color: root.colAccentDark
-                                    font.pixelSize: 11
-                                    font.bold: true
+                                        // Vector Play / Pause Icon
+                                        ctx.fillStyle = root.colAccentDark
+                                        if (root.status === "Playing") {
+                                            // Pause bars
+                                            ctx.fillRect(cx - 5, cy - 6, 3.5, 12)
+                                            ctx.fillRect(cx + 1.5, cy - 6, 3.5, 12)
+                                        } else {
+                                            // Play triangle
+                                            ctx.beginPath()
+                                            ctx.moveTo(cx - 4, cy - 7)
+                                            ctx.lineTo(cx + 6, cy)
+                                            ctx.lineTo(cx - 4, cy + 7)
+                                            ctx.closePath()
+                                            ctx.fill()
+                                        }
+                                    }
                                 }
 
                                 MouseArea {
@@ -307,16 +332,27 @@ Item {
                                 }
                             }
 
-                            // Next Track
+                            // Next Track Vector Icon
                             Item {
                                 width: 28
                                 height: 28
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "⏭"
-                                    color: root.colTextPrimary
-                                    font.pixelSize: 13
+                                Canvas {
+                                    anchors.fill: parent
+                                    antialiasing: true
+                                    onPaint: {
+                                        var ctx = getContext("2d")
+                                        ctx.reset()
+                                        ctx.fillStyle = root.colTextPrimary
+                                        // Next track triangle / bar
+                                        ctx.beginPath()
+                                        ctx.moveTo(9, 8)
+                                        ctx.lineTo(17, 14)
+                                        ctx.lineTo(9, 20)
+                                        ctx.closePath()
+                                        ctx.fill()
+                                        ctx.fillRect(18, 8, 2, 12)
+                                    }
                                 }
 
                                 MouseArea {
@@ -331,29 +367,49 @@ Item {
                     }
                 }
 
-                // Bottom Section: Progress Bar & Seek Timers
+                // Bottom Section: Material 3 (M3) Slider Track & Duration Timers
                 Column {
                     width: parent.width
                     spacing: 6
 
-                    // Wave / Pill Progress Bar
-                    Rectangle {
+                    // M3 Thick Track + Thumb Indicator
+                    Item {
                         width: parent.width
-                        height: 8
-                        radius: 4
-                        color: root.colPillBg
-                        antialiasing: true
+                        height: 12
 
+                        // Inactive Track (Thick rounded bar)
                         Rectangle {
-                            width: Math.max(parent.radius * 2, parent.width * root.progress)
-                            height: parent.height
-                            radius: parent.radius
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            height: 6
+                            radius: 3
+                            color: root.colPillBg
+                            antialiasing: true
+                        }
+
+                        // Active Track (Accent Pill)
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Math.max(6, parent.width * root.progress)
+                            height: 6
+                            radius: 3
                             color: root.colAccent
+                            antialiasing: true
+                        }
+
+                        // M3 Slider Thumb Handle Indicator
+                        Rectangle {
+                            width: 6
+                            height: 12
+                            radius: 3
+                            color: root.colAccent
+                            x: Math.min(parent.width - width, Math.max(0, parent.width * root.progress - width / 2))
+                            anchors.verticalCenter: parent.verticalCenter
                             antialiasing: true
                         }
                     }
 
-                    // Pos & Length Text
+                    // Duration Timers Row
                     Row {
                         width: parent.width
 
@@ -361,6 +417,7 @@ Item {
                             text: root.posStr
                             color: root.colTextSecondary
                             font.pixelSize: 10
+                            font.bold: true
                             font.family: "Google Sans Flex, Google Sans, Inter, monospace"
                         }
 
@@ -373,6 +430,7 @@ Item {
                             text: root.lenStr
                             color: root.colTextSecondary
                             font.pixelSize: 10
+                            font.bold: true
                             font.family: "Google Sans Flex, Google Sans, Inter, monospace"
                         }
                     }

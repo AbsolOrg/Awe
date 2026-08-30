@@ -92,7 +92,7 @@ Item {
     // ─── Material Theme Palette ───
     readonly property color colBgTile: "#3A454B"           // Dark Slate Card
     readonly property color colBadgeBg: "#4D585F"          // Slate Pill/Badge Fill
-    readonly property color colAccent: "#C2E7FF"           // Google Pixel Cyan/Light Green Accent
+    readonly property color colAccent: "#C2E7FF"           // Google Pixel Cyan Accent
     readonly property color colTextPrimary: "#FFFFFF"
     readonly property color colTextSecondary: "#B0BEC5"
 
@@ -114,29 +114,69 @@ Item {
                 anchors.fill: parent
                 anchors.margins: 16
 
-                // Top Bar: Scalloped/Badge Icon + Charging Lightning Indicator
+                // Top Bar: Vector Icon Badge + Charging Label
                 Row {
                     anchors.top: parent.top
                     width: parent.width
 
-                    // Pill Badge with Battery Level Gauge / Charging Bolt
+                    // Pill Badge with Canvas Vector Battery/Bolt Icon (Zero Emojis)
                     Rectangle {
-                        height: 26
-                        width: 50
-                        radius: 13
+                        height: 28
+                        width: 42
+                        radius: 14
                         color: root.isCharging ? root.colAccent : root.colBadgeBg
                         antialiasing: true
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: root.isCharging ? "⚡" : "🔋"
-                            color: root.isCharging ? "#1E2A30" : root.colTextPrimary
-                            font.pixelSize: 12
+                        Canvas {
+                            id: iconCanvas
+                            anchors.fill: parent
+                            antialiasing: true
+
+                            Connections {
+                                target: root
+                                function onIsChargingChanged() { iconCanvas.requestPaint() }
+                                function onBatteryLevelChanged() { iconCanvas.requestPaint() }
+                            }
+
+                            onPaint: {
+                                var ctx = getContext("2d")
+                                ctx.reset()
+                                var cx = width / 2
+                                var cy = height / 2
+
+                                if (root.isCharging) {
+                                    // Material Lightning Bolt Vector
+                                    ctx.beginPath()
+                                    ctx.moveTo(cx + 1, cy - 8)
+                                    ctx.lineTo(cx - 6, cy + 1)
+                                    ctx.lineTo(cx - 1, cy + 1)
+                                    ctx.lineTo(cx - 2, cy + 8)
+                                    ctx.lineTo(cx + 5, cy - 1)
+                                    ctx.lineTo(cx, cy - 1)
+                                    ctx.closePath()
+                                    ctx.fillStyle = "#1E2A30"
+                                    ctx.fill()
+                                } else {
+                                    // Material Battery Outline Vector
+                                    ctx.strokeStyle = "#FFFFFF"
+                                    ctx.lineWidth = 1.8
+                                    ctx.beginPath()
+                                    ctx.rect(cx - 8, cy - 5, 14, 10)
+                                    ctx.stroke()
+
+                                    ctx.fillStyle = "#FFFFFF"
+                                    ctx.fillRect(cx + 6, cy - 2, 2, 4)
+
+                                    // Inner fill bar
+                                    var fillW = Math.max(1, Math.round(10 * (root.batteryLevel / 100.0)))
+                                    ctx.fillRect(cx - 6, cy - 3, fillW, 6)
+                                }
+                            }
                         }
                     }
 
                     Item {
-                        width: parent.width - 50 - statusLabel.width
+                        width: Math.max(0, parent.width - 42 - statusLabel.width)
                         height: 1
                     }
 
