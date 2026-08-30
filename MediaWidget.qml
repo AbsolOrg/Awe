@@ -53,17 +53,44 @@ Item {
     property string title: "Pretty Patterns"
     property string artist: "ATLAS"
     property string artUrl: ""
-    property string status: "Stopped"
-    property real positionSec: 0
-    property real lengthSec: 0
-    property string posStr: "0:00"
-    property string lenStr: "0:00"
-    property real progress: 0.35
+    property string status: "Playing"
+    property real positionSec: 72
+    property real lengthSec: 225
+    property string posStr: "1:12"
+    property string lenStr: "3:45"
+    property real progress: 0.32
+    property bool hasActivePlayer: false
 
     function fmtTime(seconds) {
         var m = Math.floor(seconds / 60)
         var s = Math.floor(seconds % 60)
         return m + ":" + (s < 10 ? "0" + s : s)
+    }
+
+    // Process for media controls
+    Process {
+        id: controlProc
+        running: false
+    }
+
+    function sendMediaCmd(cmd) {
+        if (hasActivePlayer) {
+            controlProc.command = ["playerctl", cmd]
+            controlProc.running = true
+        } else {
+            // Internal playback simulation when playerctl or active MPRIS player is not present
+            if (cmd === "play-pause") {
+                root.status = (root.status === "Playing") ? "Paused" : "Playing"
+            } else if (cmd === "next") {
+                root.positionSec = 0
+                root.title = "Next Horizon"
+                root.artist = "Pixel Audio"
+            } else if (cmd === "previous") {
+                root.positionSec = 0
+                root.title = "Pretty Patterns"
+                root.artist = "ATLAS"
+            }
+        }
     }
 
     // ─── MPRIS Process Query ───
@@ -74,8 +101,9 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 var line = text.trim()
-                if (line.length > 0 && line.includes(";;")) {
+                if (line.length > 0 && line.includes(";;") && !line.includes("No players found")) {
                     var parts = line.split(";;")
+                    root.hasActivePlayer = true
                     root.title = parts[0] || "Unknown Title"
                     root.artist = parts[1] || "Unknown Artist"
                     root.artUrl = parts[2] || ""
@@ -90,18 +118,13 @@ Item {
                     root.lenStr = root.lengthSec > 0 ? root.fmtTime(root.lengthSec) : "--:--"
                     root.progress = root.lengthSec > 0 ? Math.min(1.0, root.positionSec / root.lengthSec) : 0
                 } else {
-                    root.status = "Stopped"
-                    root.title = "Pretty Patterns"
-                    root.artist = "ATLAS"
-                    root.progress = 0.35
-                    root.artUrl = ""
-                    root.posStr = "1:12"
-                    root.lenStr = "3:45"
+                    root.hasActivePlayer = false
                 }
             }
         }
     }
 
+    // Simulation Timer for position when playing without MPRIS
     Timer {
         interval: 1000
         running: true
@@ -109,6 +132,11 @@ Item {
         triggeredOnStart: true
         onTriggered: {
             mediaProc.running = true
+            if (!root.hasActivePlayer && root.status === "Playing") {
+                root.positionSec = (root.positionSec + 1) % (root.lengthSec + 1)
+                root.posStr = root.fmtTime(root.positionSec)
+                root.progress = Math.min(1.0, root.positionSec / root.lengthSec)
+            }
         }
     }
 
@@ -247,7 +275,6 @@ Item {
                                         var ctx = getContext("2d")
                                         ctx.reset()
                                         ctx.fillStyle = root.colTextPrimary
-                                        // Previous track double triangle / bar
                                         ctx.beginPath()
                                         ctx.fillRect(8, 8, 2, 12)
                                         ctx.moveTo(19, 8)
@@ -261,8 +288,7 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        Quickshell.execDetached(["playerctl", "previous"])
-                                        mediaProc.running = true
+                                        root.sendMediaCmd("previous")
                                     }
                                 }
                             }
@@ -326,8 +352,7 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        Quickshell.execDetached(["playerctl", "play-pause"])
-                                        mediaProc.running = true
+                                        root.sendMediaCmd("play-pause")
                                     }
                                 }
                             }
@@ -344,7 +369,6 @@ Item {
                                         var ctx = getContext("2d")
                                         ctx.reset()
                                         ctx.fillStyle = root.colTextPrimary
-                                        // Next track triangle / bar
                                         ctx.beginPath()
                                         ctx.moveTo(9, 8)
                                         ctx.lineTo(17, 14)
@@ -358,8 +382,7 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        Quickshell.execDetached(["playerctl", "next"])
-                                        mediaProc.running = true
+                                        root.sendMediaCmd("next")
                                     }
                                 }
                             }
@@ -372,10 +395,11 @@ Item {
                     width: parent.width
                     spacing: 6
 
-                    // M3 Thick Track + Thumb Indicator
+                    // M3 Thick Track + Thumb Indicator (Interactive Scrubbing)
                     Item {
+                        id: progressTrack
                         width: parent.width
-                        height: 12
+                        height: 16
 
                         // Inactive Track (Thick rounded bar)
                         Rectangle {
@@ -406,6 +430,17 @@ Item {
                             x: Math.min(parent.width - width, Math.max(0, parent.width * root.progress - width / 2))
                             anchors.verticalCenter: parent.verticalCenter
                             antialiasing: true
+                        }
+
+                        // MouseArea for seeking / scrubbing
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: (mouse) => {
+                                var ratio = Math.max(0, Math.min(1.0, mouse.x / width))
+                                root.progress = ratio
+                                root.positionSec = Math.round(ratio * root.lengthSec)
+                                root.posStr = root.fmtTime(root.positionSec)
+                            }
                         }
                     }
 
