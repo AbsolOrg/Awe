@@ -8,14 +8,14 @@ Item {
     property real screenHeight: 1080
 
     // Position & sizing properties
-    property real posX: 40
-    property real posY: 430
-    property real scaleFactor: 0.9
+    property real posX: 10
+    property real posY: 517
+    property real scaleFactor: 0.8
 
     x: Math.max(10, Math.min(root.screenWidth - root.width - 10, posX))
     y: Math.max(10, Math.min(root.screenHeight - root.height - 10, posY))
-    width: Math.round(380 * scaleFactor)
-    height: Math.round(160 * scaleFactor)
+    width: Math.round(360 * scaleFactor)
+    height: Math.round(180 * scaleFactor)
 
     // ─── Settings Persistence ───
     Process {
@@ -28,8 +28,8 @@ Item {
                     var data = JSON.parse(text)
                     if (data.media) {
                         if (data.media.scale !== undefined) root.scaleFactor = Math.max(0.5, Math.min(2.5, data.media.scale))
-                        var w = Math.round(380 * root.scaleFactor)
-                        var h = Math.round(160 * root.scaleFactor)
+                        var w = Math.round(360 * root.scaleFactor)
+                        var h = Math.round(180 * root.scaleFactor)
                         if (data.media.x !== undefined) root.posX = Math.max(10, Math.min(root.screenWidth - w - 10, data.media.x))
                         if (data.media.y !== undefined) root.posY = Math.max(10, Math.min(root.screenHeight - h - 10, data.media.y))
                     }
@@ -50,15 +50,15 @@ Item {
     }
 
     // ─── Media Properties ───
-    property string title: "No Media Playing"
-    property string artist: "Tap play or launch a player"
+    property string title: "Pretty Patterns"
+    property string artist: "ATLAS"
     property string artUrl: ""
     property string status: "Stopped"
     property real positionSec: 0
     property real lengthSec: 0
     property string posStr: "0:00"
     property string lenStr: "0:00"
-    property real progress: 0
+    property real progress: 0.35
 
     function fmtTime(seconds) {
         var m = Math.floor(seconds / 60)
@@ -91,10 +91,12 @@ Item {
                     root.progress = root.lengthSec > 0 ? Math.min(1.0, root.positionSec / root.lengthSec) : 0
                 } else {
                     root.status = "Stopped"
-                    root.title = "No Media Playing"
-                    root.artist = "Android Pixel Media"
-                    root.progress = 0
+                    root.title = "Pretty Patterns"
+                    root.artist = "ATLAS"
+                    root.progress = 0.35
                     root.artUrl = ""
+                    root.posStr = "1:12"
+                    root.lenStr = "3:45"
                 }
             }
         }
@@ -115,97 +117,95 @@ Item {
         mediaProc.running = true
     }
 
-    // ─── Material Dark Slate Theme Palette ───
-    readonly property color colBg: "#3A454B"              // Dark Slate Main Card
-    readonly property color colBadgeBg: "#4D585F"         // Slate Pill Badge
-    readonly property color colTextPrimary: "#FFFFFF"
-    readonly property color colTextSecondary: "#B0BEC5"
+    // ─── Material / Pixel Dark Palette ───
+    readonly property color colBg: "#2B353A"              // Android Pixel Dark Slate Card
+    readonly property color colPillBg: "#3D484E"          // Control Pill Background
+    readonly property color colAccent: "#C2E7FF"          // Pixel Light Cyan/Green Accent
+    readonly property color colAccentDark: "#1E2A30"      // Dark Text on Accent
+    readonly property color colTextPrimary: "#E1E2E5"
+    readonly property color colTextSecondary: "#A0ACAC"
 
     // ─── Scaled Visual Content ───
     Item {
         id: scaledContent
-        width: 380
-        height: 160
+        width: 360
+        height: 180
         scale: root.scaleFactor
         transformOrigin: Item.TopLeft
 
         Rectangle {
             anchors.fill: parent
             color: root.colBg
-            radius: 32
+            radius: 28
             antialiasing: true
 
-            Row {
+            Column {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 16
+                anchors.margins: 14
+                spacing: 10
 
-                // Album Art / Disc Squircle
-                Rectangle {
-                    width: 116
-                    height: 128
-                    radius: 24
-                    color: root.colBadgeBg
-                    clip: true
-                    antialiasing: true
+                // Top Header: Album Art + Track Info + Media Controls Pill
+                Row {
+                    width: parent.width
+                    height: 84
+                    spacing: 12
 
-                    Image {
-                        anchors.fill: parent
-                        source: root.artUrl
-                        fillMode: Image.PreserveAspectCrop
-                        visible: root.artUrl.length > 0 && status === Image.Ready
-                        asynchronous: true
-                    }
+                    // Album Art Squircle
+                    Rectangle {
+                        width: 84
+                        height: 84
+                        radius: 20
+                        color: root.colPillBg
+                        clip: true
+                        antialiasing: true
 
-                    // Fallback Music Disc
-                    Column {
-                        anchors.centerIn: parent
-                        visible: !root.artUrl || root.artUrl.length === 0
-                        spacing: 6
+                        Image {
+                            anchors.fill: parent
+                            source: root.artUrl
+                            fillMode: Image.PreserveAspectCrop
+                            visible: root.artUrl.length > 0 && status === Image.Ready
+                            asynchronous: true
+                        }
 
-                        Rectangle {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: 48
-                            height: 48
-                            radius: 24
-                            color: "#303B40"
+                        // Pixel Fallback Pattern / Art
+                        Item {
+                            anchors.fill: parent
+                            visible: !root.artUrl || root.artUrl.length === 0
 
                             Rectangle {
-                                anchors.centerIn: parent
-                                width: 16
-                                height: 16
-                                radius: 8
-                                color: "#D1E8DA"
+                                anchors.fill: parent
+                                color: "#3B474D"
+                            }
+
+                            Canvas {
+                                anchors.fill: parent
+                                antialiasing: true
+                                onPaint: {
+                                    var ctx = getContext("2d")
+                                    ctx.reset()
+                                    ctx.fillStyle = "#A2C9C2"
+                                    ctx.beginPath()
+                                    ctx.arc(42, 42, 28, 0, Math.PI * 2)
+                                    ctx.fill()
+                                    ctx.fillStyle = "#2B353A"
+                                    ctx.beginPath()
+                                    ctx.arc(42, 42, 10, 0, Math.PI * 2)
+                                    ctx.fill()
+                                }
                             }
                         }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: "MUSIC"
-                            color: root.colTextPrimary
-                            font.pixelSize: 9
-                            font.bold: true
-                            font.letterSpacing: 1
-                            font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
-                        }
                     }
-                }
 
-                // Controls & Details Column
-                Column {
-                    width: parent.width - 132
-                    height: parent.height
-                    spacing: 8
-
-                    // Title & Artist
+                    // Middle Column: Title & Artist
                     Column {
-                        width: parent.width
-                        spacing: 2
+                        width: parent.width - 84 - 12 - 110 - 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 3
 
                         Text {
                             text: root.title
                             color: root.colTextPrimary
-                            font.pixelSize: 14
+                            font.pixelSize: 15
                             font.bold: true
                             elide: Text.ElideRight
                             width: parent.width
@@ -215,134 +215,165 @@ Item {
                         Text {
                             text: root.artist
                             color: root.colTextSecondary
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             elide: Text.ElideRight
                             width: parent.width
                             font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
                         }
                     }
 
-                    // Progress Bar & Duration
-                    Column {
-                        width: parent.width
-                        spacing: 4
-
-                        Rectangle {
-                            width: parent.width
-                            height: 6
-                            radius: 3
-                            color: root.colBadgeBg
-                            antialiasing: true
-
-                            Rectangle {
-                                width: Math.max(parent.radius * 2, parent.width * root.progress)
-                                height: parent.height
-                                radius: parent.radius
-                                color: "#D1E8DA"
-                                antialiasing: true
-                            }
-                        }
+                    // Right Controls Pill (Prev, Play/Scallop, Next)
+                    Rectangle {
+                        width: 110
+                        height: 48
+                        radius: 24
+                        color: root.colPillBg
+                        anchors.verticalCenter: parent.verticalCenter
+                        antialiasing: true
 
                         Row {
-                            width: parent.width
-                            Text {
-                                text: root.posStr
-                                color: root.colTextSecondary
-                                font.pixelSize: 9
-                                font.family: "Google Sans Flex, Google Sans, Inter, monospace"
-                            }
+                            anchors.centerIn: parent
+                            spacing: 4
+
+                            // Previous Track
                             Item {
-                                width: parent.width - parent.children[0].width - parent.children[2].width
-                                height: 1
+                                width: 28
+                                height: 28
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "⏮"
+                                    color: root.colTextPrimary
+                                    font.pixelSize: 13
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        Quickshell.execDetached(["playerctl", "previous"])
+                                        mediaProc.running = true
+                                    }
+                                }
                             }
-                            Text {
-                                text: root.lenStr
-                                color: root.colTextSecondary
-                                font.pixelSize: 9
-                                font.family: "Google Sans Flex, Google Sans, Inter, monospace"
+
+                            // Scalloped Play / Pause Button (Pixel Style)
+                            Item {
+                                width: 36
+                                height: 36
+
+                                Canvas {
+                                    id: scallopCanvas
+                                    anchors.fill: parent
+                                    antialiasing: true
+
+                                    onPaint: {
+                                        var ctx = getContext("2d")
+                                        ctx.reset()
+                                        var cx = width / 2
+                                        var cy = height / 2
+                                        var rOuter = 17
+                                        var rInner = 14
+                                        var points = 12
+
+                                        ctx.beginPath()
+                                        for (var i = 0; i < points * 2; i++) {
+                                            var angle = (i * Math.PI) / points
+                                            var r = (i % 2 === 0) ? rOuter : rInner
+                                            var x = cx + r * Math.cos(angle)
+                                            var y = cy + r * Math.sin(angle)
+                                            if (i === 0) ctx.moveTo(x, y)
+                                            else ctx.lineTo(x, y)
+                                        }
+                                        ctx.closePath()
+                                        ctx.fillStyle = root.colAccent
+                                        ctx.fill()
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: root.status === "Playing" ? "❚❚" : "▶"
+                                    color: root.colAccentDark
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        Quickshell.execDetached(["playerctl", "play-pause"])
+                                        mediaProc.running = true
+                                    }
+                                }
+                            }
+
+                            // Next Track
+                            Item {
+                                width: 28
+                                height: 28
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "⏭"
+                                    color: root.colTextPrimary
+                                    font.pixelSize: 13
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        Quickshell.execDetached(["playerctl", "next"])
+                                        mediaProc.running = true
+                                    }
+                                }
                             }
                         }
                     }
+                }
 
-                    // Playback Buttons
+                // Bottom Section: Progress Bar & Seek Timers
+                Column {
+                    width: parent.width
+                    spacing: 6
+
+                    // Wave / Pill Progress Bar
+                    Rectangle {
+                        width: parent.width
+                        height: 8
+                        radius: 4
+                        color: root.colPillBg
+                        antialiasing: true
+
+                        Rectangle {
+                            width: Math.max(parent.radius * 2, parent.width * root.progress)
+                            height: parent.height
+                            radius: parent.radius
+                            color: root.colAccent
+                            antialiasing: true
+                        }
+                    }
+
+                    // Pos & Length Text
                     Row {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 16
+                        width: parent.width
 
-                        // Prev Button
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 32
-                            height: 32
-                            radius: 16
-                            color: root.colBadgeBg
-                            antialiasing: true
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "⏮"
-                                color: root.colTextPrimary
-                                font.pixelSize: 12
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    Quickshell.execDetached(["playerctl", "previous"])
-                                    mediaProc.running = true
-                                }
-                            }
+                        Text {
+                            text: root.posStr
+                            color: root.colTextSecondary
+                            font.pixelSize: 10
+                            font.family: "Google Sans Flex, Google Sans, Inter, monospace"
                         }
 
-                        // Play/Pause Main Button
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 42
-                            height: 42
-                            radius: 21
-                            color: "#D1E8DA"
-                            antialiasing: true
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: root.status === "Playing" ? "⏸" : "▶"
-                                color: "#253338"
-                                font.pixelSize: 16
-                                font.bold: true
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    Quickshell.execDetached(["playerctl", "play-pause"])
-                                    mediaProc.running = true
-                                }
-                            }
+                        Item {
+                            width: Math.max(0, parent.width - parent.children[0].width - parent.children[2].width)
+                            height: 1
                         }
 
-                        // Next Button
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 32
-                            height: 32
-                            radius: 16
-                            color: root.colBadgeBg
-                            antialiasing: true
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "⏭"
-                                color: root.colTextPrimary
-                                font.pixelSize: 12
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    Quickshell.execDetached(["playerctl", "next"])
-                                    mediaProc.running = true
-                                }
-                            }
+                        Text {
+                            text: root.lenStr
+                            color: root.colTextSecondary
+                            font.pixelSize: 10
+                            font.family: "Google Sans Flex, Google Sans, Inter, monospace"
                         }
                     }
                 }

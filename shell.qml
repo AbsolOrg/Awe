@@ -29,6 +29,7 @@ ShellRoot {
                 Region { item: mediaWidget }
                 Region { item: weatherWidget }
                 Region { item: posterWidget }
+                Region { item: batteryWidget }
             }
 
             Item {
@@ -67,6 +68,12 @@ ShellRoot {
 
                 PosterWidget {
                     id: posterWidget
+                    screenWidth: desktopWindow.width
+                    screenHeight: desktopWindow.height
+                }
+
+                BatteryWidget {
+                    id: batteryWidget
                     screenWidth: desktopWindow.width
                     screenHeight: desktopWindow.height
                 }
