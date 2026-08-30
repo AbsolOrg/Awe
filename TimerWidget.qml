@@ -8,17 +8,17 @@ Item {
     property real screenHeight: 1080
 
     // Position & sizing properties
-    property real posX: 490
-    property real posY: 320
-    property real scaleFactor: 0.9
+    property real posX: 640
+    property real posY: 160
+    property real scaleFactor: 0.88
 
     x: Math.max(10, Math.min(root.screenWidth - root.width - 10, posX))
     y: Math.max(10, Math.min(root.screenHeight - root.height - 10, posY))
-    width: Math.round(230 * scaleFactor)
-    height: Math.round(220 * scaleFactor)
+    width: Math.round(240 * scaleFactor)
+    height: Math.round(230 * scaleFactor)
 
     // Timer State
-    property string timerMode: "focus" // "focus" (25m), "break" (5m), "stopwatch"
+    property string timerMode: "focus" // "focus" (25m), "break" (5m), "custom", "stopwatch"
     property int totalSec: 1500
     property int remainingSec: 1500
     property bool isRunning: false
@@ -38,11 +38,32 @@ Item {
         } else if (mode === "break") {
             root.totalSec = 300
             root.remainingSec = 300
+        } else if (mode === "custom") {
+            if (root.totalSec < 60) root.totalSec = 600
+            root.remainingSec = root.totalSec
         } else if (mode === "stopwatch") {
             root.totalSec = 3600
             root.remainingSec = 0
         }
         ringCanvas.requestPaint()
+        root.saveSettings()
+    }
+
+    function adjustTime(deltaSec) {
+        if (root.timerMode === "stopwatch") return
+        var newSec = Math.max(60, Math.min(7200, (root.isRunning ? root.remainingSec : root.totalSec) + deltaSec))
+        if (!root.isRunning) {
+            root.totalSec = newSec
+            root.remainingSec = newSec
+            if (root.timerMode !== "focus" && root.timerMode !== "break") {
+                root.timerMode = "custom"
+            }
+        } else {
+            root.remainingSec = newSec
+            if (newSec > root.totalSec) root.totalSec = newSec
+        }
+        ringCanvas.requestPaint()
+        root.saveSettings()
     }
 
     // ─── Settings Persistence ───
@@ -56,10 +77,15 @@ Item {
                     var data = JSON.parse(text)
                     if (data.timer) {
                         if (data.timer.scale !== undefined) root.scaleFactor = Math.max(0.5, Math.min(2.5, data.timer.scale))
-                        var w = Math.round(230 * root.scaleFactor)
-                        var h = Math.round(220 * root.scaleFactor)
+                        var w = Math.round(240 * root.scaleFactor)
+                        var h = Math.round(230 * root.scaleFactor)
                         if (data.timer.x !== undefined) root.posX = Math.max(10, Math.min(root.screenWidth - w - 10, data.timer.x))
                         if (data.timer.y !== undefined) root.posY = Math.max(10, Math.min(root.screenHeight - h - 10, data.timer.y))
+                        if (data.timer.mode !== undefined) root.timerMode = data.timer.mode
+                        if (data.timer.totalSec !== undefined) {
+                            root.totalSec = data.timer.totalSec
+                            root.remainingSec = data.timer.totalSec
+                        }
                     }
                 } catch (e) {}
             }
@@ -72,7 +98,7 @@ Item {
     }
 
     function saveSettings() {
-        var script = "python3 -c 'import json, os; p=os.path.expanduser(\"~/.config/quickshell/widget_settings.json\"); d=json.load(open(p)) if os.path.exists(p) else {}; d[\"timer\"]={\"x\":" + Math.round(root.x) + ",\"y\":" + Math.round(root.y) + ",\"scale\":" + root.scaleFactor.toFixed(2) + "}; open(p,\"w\").write(json.dumps(d,indent=2))'"
+        var script = "python3 -c 'import json, os; p=os.path.expanduser(\"~/.config/quickshell/widget_settings.json\"); d=json.load(open(p)) if os.path.exists(p) else {}; d[\"timer\"]={\"x\":" + Math.round(root.x) + ",\"y\":" + Math.round(root.y) + ",\"scale\":" + root.scaleFactor.toFixed(2) + ",\"mode\":\"" + root.timerMode + "\",\"totalSec\":" + root.totalSec + "}; open(p,\"w\").write(json.dumps(d,indent=2))'"
         saveSettingsProc.command = ["sh", "-c", script]
         saveSettingsProc.running = true
     }
@@ -104,14 +130,15 @@ Item {
     readonly property color colPillBg: "#303B42"
     readonly property color colAccent: "#C2E7FF"
     readonly property color colAccentGreen: "#A2C9C2"
+    readonly property color colAccentAmber: "#FFE082"
     readonly property color colTextPrimary: "#FFFFFF"
     readonly property color colTextSecondary: "#9CA8AC"
 
     // ─── Scaled Visual Content ───
     Item {
         id: scaledContent
-        width: 230
-        height: 220
+        width: 240
+        height: 230
         scale: root.scaleFactor
         transformOrigin: Item.TopLeft
 
@@ -160,16 +187,16 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 6
 
-                    // Focus Pill
+                    // Focus Pill (25m)
                     Rectangle {
                         height: 22
-                        width: 58
+                        width: 60
                         radius: 11
                         color: root.timerMode === "focus" ? root.colAccent : root.colPillBg
                         antialiasing: true
                         Text {
                             anchors.centerIn: parent
-                            text: "Focus"
+                            text: "25m"
                             color: root.timerMode === "focus" ? "#1E2A30" : root.colTextSecondary
                             font.pixelSize: 10
                             font.bold: true
@@ -182,16 +209,16 @@ Item {
                         }
                     }
 
-                    // Break Pill
+                    // Break Pill (5m)
                     Rectangle {
                         height: 22
-                        width: 58
+                        width: 60
                         radius: 11
                         color: root.timerMode === "break" ? root.colAccentGreen : root.colPillBg
                         antialiasing: true
                         Text {
                             anchors.centerIn: parent
-                            text: "Break"
+                            text: "5m"
                             color: root.timerMode === "break" ? "#1E2A30" : root.colTextSecondary
                             font.pixelSize: 10
                             font.bold: true
@@ -207,9 +234,9 @@ Item {
                     // Stopwatch Pill
                     Rectangle {
                         height: 22
-                        width: 58
+                        width: 60
                         radius: 11
-                        color: root.timerMode === "stopwatch" ? "#FFE082" : root.colPillBg
+                        color: root.timerMode === "stopwatch" ? root.colAccentAmber : root.colPillBg
                         antialiasing: true
                         Text {
                             anchors.centerIn: parent
@@ -227,15 +254,17 @@ Item {
                     }
                 }
 
-                // Middle: Circular Progress Ring & Big Time Display
+                // Middle: Circular Progress Ring with Interactive Time Adjustment Buttons
                 Item {
-                    width: 116
+                    width: parent.width
                     height: 116
-                    anchors.horizontalCenter: parent.horizontalCenter
 
+                    // Circular Progress Canvas
                     Canvas {
                         id: ringCanvas
-                        anchors.fill: parent
+                        width: 116
+                        height: 116
+                        anchors.centerIn: parent
                         antialiasing: true
 
                         onPaint: {
@@ -256,7 +285,7 @@ Item {
                             var ratio = (root.totalSec > 0) ? (root.remainingSec / root.totalSec) : 0
                             if (root.timerMode === "stopwatch") ratio = (root.remainingSec % 60) / 60.0
 
-                            ctx.strokeStyle = (root.timerMode === "break") ? root.colAccentGreen : (root.timerMode === "stopwatch" ? "#FFE082" : root.colAccent)
+                            ctx.strokeStyle = (root.timerMode === "break") ? root.colAccentGreen : (root.timerMode === "stopwatch" ? root.colAccentAmber : root.colAccent)
                             ctx.lineWidth = 6
                             ctx.lineCap = "round"
                             ctx.beginPath()
@@ -265,6 +294,37 @@ Item {
                         }
                     }
 
+                    // Left Minus Button (-1m / -5m)
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 2
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 26
+                        height: 26
+                        radius: 13
+                        color: minusArea.containsMouse ? "#33FFFFFF" : root.colPillBg
+                        visible: root.timerMode !== "stopwatch"
+                        antialiasing: true
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "-1m"
+                            color: "#FFFFFF"
+                            font.pixelSize: 9
+                            font.bold: true
+                            font.family: "Google Sans Flex, Google Sans, Inter, monospace"
+                        }
+
+                        MouseArea {
+                            id: minusArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.adjustTime(-60)
+                        }
+                    }
+
+                    // Center Time Display
                     Column {
                         anchors.centerIn: parent
                         spacing: 0
@@ -273,14 +333,14 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: root.getFormattedTime()
                             color: root.colTextPrimary
-                            font.pixelSize: 22
+                            font.pixelSize: 21
                             font.bold: true
                             font.family: "Google Sans Flex, Google Sans, Inter, monospace"
                         }
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: root.isRunning ? "RUNNING" : "PAUSED"
+                            text: root.isRunning ? "RUNNING" : (root.timerMode === "custom" ? "CUSTOM" : "PAUSED")
                             color: root.isRunning ? root.colAccent : root.colTextSecondary
                             font.pixelSize: 8
                             font.bold: true
@@ -288,14 +348,44 @@ Item {
                             font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
                         }
                     }
+
+                    // Right Plus Button (+1m / +5m)
+                    Rectangle {
+                        anchors.right: parent.right
+                        anchors.rightMargin: 2
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 26
+                        height: 26
+                        radius: 13
+                        color: plusArea.containsMouse ? "#33FFFFFF" : root.colPillBg
+                        visible: root.timerMode !== "stopwatch"
+                        antialiasing: true
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "+1m"
+                            color: "#FFFFFF"
+                            font.pixelSize: 9
+                            font.bold: true
+                            font.family: "Google Sans Flex, Google Sans, Inter, monospace"
+                        }
+
+                        MouseArea {
+                            id: plusArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.adjustTime(60)
+                        }
+                    }
                 }
 
-                // Bottom Controls: Play/Pause + Reset
+                // Bottom Controls: Play/Pause + Reset + +5m Quick Pill
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 12
+                    spacing: 8
 
-                    // Play / Pause Main Scalloped Button
+                    // Play / Pause Button
                     Rectangle {
                         width: 68
                         height: 28
@@ -342,6 +432,31 @@ Item {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.setMode(root.timerMode)
+                        }
+                    }
+
+                    // +5m Quick Adjustment Pill
+                    Rectangle {
+                        width: 44
+                        height: 28
+                        radius: 14
+                        color: root.colPillBg
+                        visible: root.timerMode !== "stopwatch"
+                        antialiasing: true
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "+5m"
+                            color: root.colAccent
+                            font.pixelSize: 10
+                            font.bold: true
+                            font.family: "Google Sans Flex, Google Sans, Inter, monospace"
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.adjustTime(300)
                         }
                     }
                 }
