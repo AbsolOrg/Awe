@@ -94,9 +94,3 @@ Widget positions and scale factors are stored automatically in:
 ```
 
 To reset all widgets to their default layout, delete or edit this file.
-
----
-
-## License
-
-This project is licensed under the MIT License.
