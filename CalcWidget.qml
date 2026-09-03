@@ -140,18 +140,18 @@ Item {
         loadSettingsProc.running = true
     }
 
-    // Material 3 Palette
-    readonly property color colBg: "#232D33"
-    readonly property color colDisplayBg: "#1C252B"
-    readonly property color colPillBg: "#303B42"
-    readonly property color colNumBg: "#2A363E"
-    readonly property color colOpBg: "#36454F"
-    readonly property color colAccent: "#C2E7FF"
-    readonly property color colAccentGreen: "#A2C9C2"
-    readonly property color colClearBg: "#3D2E32"
-    readonly property color colClearText: "#FFB4AB"
-    readonly property color colTextPrimary: "#FFFFFF"
-    readonly property color colTextSecondary: "#9CA8AC"
+    // Theme Palette
+    readonly property color colBg: Theme.colBg
+    readonly property color colDisplayBg: Theme.colBgTile
+    readonly property color colPillBg: Theme.colPillBg
+    readonly property color colNumBg: Theme.colPillBg
+    readonly property color colOpBg: Theme.colBgTile
+    readonly property color colAccent: Theme.colAccent
+    readonly property color colAccentGreen: Theme.colAccentGreen
+    readonly property color colClearBg: Theme.colPillBg
+    readonly property color colClearText: Theme.colAccentWarm
+    readonly property color colTextPrimary: Theme.colTextPrimary
+    readonly property color colTextSecondary: Theme.colTextSecondary
 
     // ─── Scaled Visual Content ───
     Item {
@@ -187,14 +187,24 @@ Item {
             }
         }
 
-        // Main Material 3 Elevated Card
+        // Main Elevated Card
         Rectangle {
             anchors.fill: parent
             color: root.colBg
             radius: 32
-            border.color: "#1FFFFFFF"
-            border.width: 1.5
+            border.color: Theme.borderColor
+            border.width: Theme.borderWidth
+            clip: true
             antialiasing: true
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 1.5
+                color: Theme.glassGloss
+                visible: Theme.isGlass
+            }
 
             Column {
                 anchors.fill: parent

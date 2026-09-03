@@ -60,11 +60,11 @@ Item {
         diskProc.running = true
     }
 
-    // ─── Material Theme Palette ───
-    readonly property color colBgTile: "#3A454B"           // Dark Slate Tile Background
-    readonly property color colBadgeBg: "#4D585F"          // Lighter Slate Badge Fill
-    readonly property color colTextPrimary: "#FFFFFF"
-    readonly property color colTextSecondary: "#B0BEC5"
+    // ─── Theme Palette ───
+    readonly property color colBgTile: Theme.colBgTile
+    readonly property color colBadgeBg: Theme.colPillBg
+    readonly property color colTextPrimary: Theme.colTextPrimary
+    readonly property color colTextSecondary: Theme.colTextSecondary
 
     // ─── System info properties ───
     property int cpuNumeric: 17
@@ -173,7 +173,19 @@ Item {
                 height: 120
                 radius: 32
                 color: root.colBgTile
+                border.color: Theme.borderColor
+                border.width: Theme.borderWidth
+                clip: true
                 antialiasing: true
+
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: 1.5
+                    color: Theme.glassGloss
+                    visible: Theme.isGlass
+                }
 
                 Item {
                     anchors.fill: parent
@@ -256,7 +268,19 @@ Item {
                 height: 120
                 radius: 32
                 color: root.colBgTile
+                border.color: Theme.borderColor
+                border.width: Theme.borderWidth
+                clip: true
                 antialiasing: true
+
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: 1.5
+                    color: Theme.glassGloss
+                    visible: Theme.isGlass
+                }
 
                 Item {
                     anchors.fill: parent
@@ -338,7 +362,19 @@ Item {
                 height: 120
                 radius: 32
                 color: root.colBgTile
+                border.color: Theme.borderColor
+                border.width: Theme.borderWidth
+                clip: true
                 antialiasing: true
+
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: 1.5
+                    color: Theme.glassGloss
+                    visible: Theme.isGlass
+                }
 
                 Item {
                     anchors.fill: parent

@@ -118,14 +118,14 @@ Item {
         loadSettingsProc.running = true
     }
 
-    // Material 3 Palette
-    readonly property color colBg: "#232D33"
-    readonly property color colPillBg: "#303B42"
-    readonly property color colAccent: "#C2E7FF"
-    readonly property color colAccentSun: "#FFE082"
-    readonly property color colAccentMoon: "#D7AEFB"
-    readonly property color colTextPrimary: "#FFFFFF"
-    readonly property color colTextSecondary: "#9CA8AC"
+    // Theme Palette
+    readonly property color colBg: Theme.colBg
+    readonly property color colPillBg: Theme.colPillBg
+    readonly property color colAccent: Theme.colAccent
+    readonly property color colAccentSun: Theme.colAccentWarning
+    readonly property color colAccentMoon: Theme.colAccentWarm
+    readonly property color colTextPrimary: Theme.colTextPrimary
+    readonly property color colTextSecondary: Theme.colTextSecondary
 
     // ─── Scaled Visual Content ───
     Item {
@@ -176,9 +176,19 @@ Item {
             anchors.fill: parent
             color: root.colBg
             radius: 32
-            border.color: "#1FFFFFFF"
-            border.width: 1.5
+            border.color: Theme.borderColor
+            border.width: Theme.borderWidth
+            clip: true
             antialiasing: true
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 1.5
+                color: Theme.glassGloss
+                visible: Theme.isGlass
+            }
 
             Column {
                 anchors.fill: parent

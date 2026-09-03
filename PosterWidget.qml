@@ -273,21 +273,21 @@ Item {
 
                 // Gradient background
                 var grad = ctx.createLinearGradient(0, 0, width, height)
-                grad.addColorStop(0, "#3E494F")
-                grad.addColorStop(1, "#222C31")
+                grad.addColorStop(0, Theme.colBgTile)
+                grad.addColorStop(1, Theme.colBg)
                 ctx.fillStyle = grad
                 ctx.fill()
 
                 // Minimalist vector camera / frame graphic (zero text)
                 var cx = width / 2
                 var cy = height / 2
-                ctx.strokeStyle = "#A2C9C2"
+                ctx.strokeStyle = Theme.colAccentGreen
                 ctx.lineWidth = 2
                 ctx.strokeRect(cx - 24, cy - 20, 48, 36)
 
                 ctx.beginPath()
                 ctx.arc(cx - 10, cy - 10, 4, 0, Math.PI * 2)
-                ctx.fillStyle = "#A2C9C2"
+                ctx.fillStyle = Theme.colAccentGreen
                 ctx.fill()
 
                 ctx.beginPath()
@@ -296,7 +296,7 @@ Item {
                 ctx.lineTo(cx + 6, cy + 6)
                 ctx.lineTo(cx + 20, cy + 12)
                 ctx.closePath()
-                ctx.fillStyle = "#A2C9C2"
+                ctx.fillStyle = Theme.colAccentGreen
                 ctx.fill()
                 ctx.restore()
             }
@@ -308,13 +308,21 @@ Item {
             anchors.fill: parent
             antialiasing: true
 
+            Connections {
+                target: Theme
+                function onCurrentThemeChanged() {
+                    outlineCanvas.requestPaint()
+                    placeholderCanvas.requestPaint()
+                }
+            }
+
             onPaint: {
                 var ctx = getContext("2d")
                 ctx.reset()
                 var currentShape = root.shapeNames[root.shapeIndex % root.shapeNames.length]
                 root.drawShapePath(ctx, currentShape, width, height)
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.16)"
-                ctx.lineWidth = 1.5
+                ctx.strokeStyle = Theme.borderColor
+                ctx.lineWidth = Theme.borderWidth
                 ctx.stroke()
             }
         }

@@ -56,15 +56,15 @@ Item {
     }
 
     // ─── Theme Palette ───
-    readonly property color colCookieBg: "#3A454B"          // Organic Dark Slate Cookie Face
-    readonly property color colCookieNumbers: "#45FFFFFF"     // Subtle Muted Face Numbers (12, 3, 6, 9)
-    readonly property color colHands: "#E3ECE9"             // Soft Light Blue-White Hands
-    readonly property color colPrimary: "#B5D2C2"          // Soft Sage Green Pastel
-    readonly property color colPrimaryContainer: "#86A896"    // Deep Sage Pastel
-    readonly property color colSecondary: "#D1E8DA"
-    readonly property color colGlassBg: "#3B1B2621"
-    readonly property color colNothingRed: "#D32F2F"        // Nothing OS Signature Red
-    readonly property color colNothingDarkBg: "#18181B"      // Nothing OS Dark Matte Container
+    readonly property color colCookieBg: Theme.colBgTile
+    readonly property color colCookieNumbers: Theme.colTextSecondary
+    readonly property color colHands: Theme.colTextPrimary
+    readonly property color colPrimary: Theme.colAccentGreen
+    readonly property color colPrimaryContainer: Theme.colAccent
+    readonly property color colSecondary: Theme.colAccent
+    readonly property color colGlassBg: Theme.colBg
+    readonly property color colNothingRed: Theme.colAccentWarm
+    readonly property color colNothingDarkBg: Theme.colBg
 
     // ─── Time & Date Properties ───
     property int hours: 0
@@ -190,6 +190,16 @@ Item {
                     ctx.closePath()
                     ctx.fillStyle = root.colCookieBg
                     ctx.fill()
+                    if (Theme.borderWidth > 0) {
+                        ctx.strokeStyle = Theme.borderColor
+                        ctx.lineWidth = Theme.borderWidth
+                        ctx.stroke()
+                    }
+                }
+
+                Connections {
+                    target: Theme
+                    function onCurrentThemeChanged() { cookieCanvas.requestPaint() }
                 }
             }
 
@@ -201,8 +211,15 @@ Item {
                 height: 58
 
                 Canvas {
+                    id: pentagonCanvas
                     anchors.fill: parent
                     antialiasing: true
+
+                    Connections {
+                        target: Theme
+                        function onCurrentThemeChanged() { pentagonCanvas.requestPaint() }
+                    }
+
                     onPaint: {
                         var ctx = getContext("2d")
                         ctx.reset()
@@ -221,13 +238,18 @@ Item {
                         ctx.closePath()
                         ctx.fillStyle = root.colCookieBg
                         ctx.fill()
+                        if (Theme.borderWidth > 0) {
+                            ctx.strokeStyle = Theme.borderColor
+                            ctx.lineWidth = Theme.borderWidth
+                            ctx.stroke()
+                        }
                     }
                 }
 
                 Text {
                     anchors.centerIn: parent
                     text: root.dayString
-                    color: "#FFFFFF"
+                    color: root.colHands
                     font.pixelSize: 20
                     font.bold: true
                     font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
@@ -242,12 +264,14 @@ Item {
                 height: 38
                 radius: 19
                 color: root.colCookieBg
+                border.color: Theme.borderColor
+                border.width: Theme.borderWidth
                 antialiasing: true
 
                 Text {
                     anchors.centerIn: parent
                     text: root.monthString
-                    color: "#FFFFFF"
+                    color: root.colHands
                     font.pixelSize: 20
                     font.bold: true
                     font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
@@ -489,20 +513,54 @@ Item {
                         antialiasing: true
                     }
                 }
+            // ─── 12-Hour Analog Indicator Dots (12, 3, 6, 9 Cardinal Markers) ───
+            Repeater {
+                model: [
+                    { label: "12", angle: 0 },
+                    { label: "3", angle: 90 },
+                    { label: "6", angle: 180 },
+                    { label: "9", angle: 270 }
+                ]
 
-                // Center Red Core Dot
-                Rectangle {
+                Item {
                     anchors.centerIn: parent
-                    width: 14
-                    height: 14
+                    width: 20
+                    height: 20
+                    transform: [
+                        Translate {
+                            x: 95 * Math.sin(modelData.angle * Math.PI / 180)
+                            y: -95 * Math.cos(modelData.angle * Math.PI / 180)
+                        }
+                    ]
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData.label
+                        color: "#A1A1AA"
+                        font.pixelSize: 12
+                        font.bold: true
+                        font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
+                    }
+                }
+            }
+
+            // ─── Center Red Hub ───
+            Item {
+                anchors.centerIn: parent
+                width: 14
+                height: 14
+
+                Rectangle {
+                    anchors.fill: parent
                     radius: 7
                     color: root.colNothingRed
-                    border.width: 3
+                    border.width: 2
                     border.color: "#FFFFFF"
                     antialiasing: true
                 }
             }
         }
+    }
 
         // ════════════════════════════════════════════════════
         // STYLE 3: Stacked 2-Line Expressive Desktop Clock
@@ -515,8 +573,19 @@ Item {
                 anchors.fill: parent
                 color: root.colGlassBg
                 radius: 40
-                border.width: 0
+                border.color: Theme.borderColor
+                border.width: Theme.borderWidth
+                clip: true
                 antialiasing: true
+
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: 1.5
+                    color: Theme.glassGloss
+                    visible: Theme.isGlass
+                }
             }
 
             Column {
@@ -553,8 +622,19 @@ Item {
             visible: root.clockStyle === "digital"
             color: root.colGlassBg
             radius: 36
-            border.width: 0
+            border.color: Theme.borderColor
+            border.width: Theme.borderWidth
+            clip: true
             antialiasing: true
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 1.5
+                color: Theme.glassGloss
+                visible: Theme.isGlass
+            }
 
             Text {
                 anchors.centerIn: parent
