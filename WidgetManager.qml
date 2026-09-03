@@ -10,8 +10,8 @@ Item {
     // Top centered floating pill / notch
     x: Math.round((screenWidth - width) / 2)
     y: 10
-    width: isExpanded ? 360 : 180
-    height: isExpanded ? 340 : 34
+    width: isExpanded ? 390 : 180
+    height: isExpanded ? 410 : 34
     z: 999
 
     property bool isExpanded: false
@@ -71,7 +71,7 @@ Item {
         var jsonStr = JSON.stringify({
             visibility: root.widgetVisibility
         }).replace(/'/g, "'\\''")
-        var script = "python3 -c 'import json, os; p=os.path.expanduser(\"~/.config/quickshell/widget_settings.json\"); d=json.load(open(p)) if os.path.exists(p) else {}; d[\"manager\"]=" + jsonStr + "; open(p,\"w\").write(json.dumps(d,indent=2))'"
+        var script = "python3 -c 'import json, os; p=os.path.expanduser(\"~/.config/quickshell/widget_settings.json\"); d=json.load(open(p)) if os.path.exists(p) else {}; d.setdefault(\"manager\", {})[\"visibility\"]=" + jsonStr + "; open(p,\"w\").write(json.dumps(d,indent=2))'"
         saveSettingsProc.command = ["sh", "-c", script]
         saveSettingsProc.running = true
     }
@@ -87,33 +87,43 @@ Item {
         loadSettingsProc.running = true
     }
 
-    // Material 3 Palette
-    readonly property color colBg: "#232D33"
-    readonly property color colPillBg: "#303B42"
-    readonly property color colAccent: "#C2E7FF"
-    readonly property color colAccentGreen: "#A2C9C2"
-    readonly property color colTextPrimary: "#FFFFFF"
-    readonly property color colTextSecondary: "#9CA8AC"
+    // Dynamic Theme Palette from Theme singleton
+    readonly property color colBg: Theme.colBg
+    readonly property color colPillBg: Theme.colPillBg
+    readonly property color colAccent: Theme.colAccent
+    readonly property color colAccentGreen: Theme.colAccentGreen
+    readonly property color colTextPrimary: Theme.colTextPrimary
+    readonly property color colTextSecondary: Theme.colTextSecondary
 
-    Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutQuad } }
-    Behavior on height { NumberAnimation { duration: 180; easing.type: Easing.OutQuad } }
+    Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+    Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
     // Main Floating Pill / Expanded Card
     Rectangle {
         anchors.fill: parent
         color: root.colBg
         radius: root.isExpanded ? 24 : 17
-        border.color: "#24FFFFFF"
-        border.width: 1.5
+        border.color: Theme.borderColor
+        border.width: Theme.borderWidth
         antialiasing: true
         clip: true
+
+        // Top glossy specular highlight in Liquid Glass mode
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 1.5
+            color: Theme.glassGloss
+            visible: Theme.isGlass
+        }
 
         Column {
             anchors.fill: parent
             anchors.margins: root.isExpanded ? 12 : 4
             spacing: 8
 
-            // ─── Header Notch Bar (Entire bar is clickable to toggle expand/collapse) ───
+            // ─── Header Notch Bar (Click to toggle expand/collapse) ───
             Rectangle {
                 width: parent.width
                 height: root.isExpanded ? 30 : 26
@@ -138,7 +148,7 @@ Item {
                     // Notch Title Label
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: root.isExpanded ? "Desktop Widgets" : "Awe Widgets"
+                        text: root.isExpanded ? "Desktop Widgets & Themes" : "Awe Widgets"
                         color: root.colTextPrimary
                         font.pixelSize: 11
                         font.bold: true
@@ -165,85 +175,77 @@ Item {
                 }
             }
 
-            // ─── Expanded Scrollable Widget Toggle Grid ───
-            Item {
+            // ─── Theme Selection Header & Chips ───
+            Column {
                 visible: root.isExpanded
                 width: parent.width
-                height: parent.height - 38
-                clip: true
+                spacing: 6
 
+                Row {
+                    spacing: 6
+                    width: parent.width
+
+                    Text {
+                        text: "THEME PRESET"
+                        color: root.colTextSecondary
+                        font.pixelSize: 9
+                        font.bold: true
+                        font.letterSpacing: 1.0
+                        font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
+                    }
+                }
+
+                // Horizontal scrollable theme chips
                 Flickable {
-                    id: scrollFlick
-                    anchors.fill: parent
-                    contentWidth: width
-                    contentHeight: widgetGrid.implicitHeight + 10
+                    id: themeFlick
+                    width: parent.width
+                    height: 32
+                    contentWidth: themeRow.implicitWidth
+                    contentHeight: 32
                     boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.HorizontalFlick
                     clip: true
 
-                    Grid {
-                        id: widgetGrid
-                        width: parent.width
-                        columns: 2
+                    WheelHandler {
+                        onWheel: (event) => {
+                            themeFlick.contentX = Math.max(0, Math.min(themeFlick.contentWidth - themeFlick.width, themeFlick.contentX - event.angleDelta.y))
+                        }
+                    }
+
+                    Row {
+                        id: themeRow
                         spacing: 6
 
                         Repeater {
-                            model: [
-                                { id: "clock", label: "Clock" },
-                                { id: "poster", label: "Poster" },
-                                { id: "calendar", label: "Calendar" },
-                                { id: "media", label: "Media Player" },
-                                { id: "sysinfo", label: "System Info" },
-                                { id: "battery", label: "Battery" },
-                                { id: "weather", label: "Weather" },
-                                { id: "quickcontrols", label: "Volume / Brightness" },
-                                { id: "network", label: "Network" },
-                                { id: "notes", label: "Notes" },
-                                { id: "todo", label: "Tasks / Todo" },
-                                { id: "timer", label: "Pomodoro Timer" },
-                                { id: "thermal", label: "Hardware Thermals" },
-                                { id: "quote", label: "Daily Quote" },
-                                { id: "clipboard", label: "Clipboard" },
-                                { id: "crypto", label: "Crypto Ticker" },
-                                { id: "worldclock", label: "World Clock" },
-                                { id: "git", label: "Git Dashboard" },
-                                { id: "resourcewheel", label: "Resource Wheel" },
-                                { id: "visualizer", label: "Audio Visualizer" },
-                                { id: "habits", label: "Habit Tracker" },
-                                { id: "ping", label: "Network Ping" },
-                                { id: "storagemap", label: "Storage Map" },
-                                { id: "calc", label: "Calculator" }
-                            ]
+                            model: Theme.themes
 
                             Rectangle {
-                                width: (widgetGrid.width - 6) / 2
-                                height: 28
-                                radius: 14
-                                color: (root.widgetVisibility[modelData.id] !== false) ? root.colPillBg : "#1A2226"
-                                border.color: (root.widgetVisibility[modelData.id] !== false) ? root.colAccent : "#2A343A"
-                                border.width: 1
+                                id: themeChip
+                                width: chipRow.implicitWidth + 16
+                                height: 30
+                                radius: 15
+                                color: (Theme.currentTheme === modelData.id) ? root.colPillBg : "#12FFFFFF"
+                                border.color: (Theme.currentTheme === modelData.id) ? root.colAccent : "#1FFFFFFF"
+                                border.width: (Theme.currentTheme === modelData.id) ? 1.5 : 1.0
                                 antialiasing: true
 
                                 Row {
-                                    anchors.fill: parent
-                                    anchors.margins: 6
-                                    spacing: 6
+                                    id: chipRow
+                                    anchors.centerIn: parent
+                                    spacing: 5
 
-                                    Rectangle {
+                                    Text {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        width: 6
-                                        height: 6
-                                        radius: 3
-                                        color: (root.widgetVisibility[modelData.id] !== false) ? root.colAccentGreen : "#667780"
+                                        text: modelData.icon
+                                        font.pixelSize: 11
                                     }
 
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: modelData.label
-                                        color: (root.widgetVisibility[modelData.id] !== false) ? "#FFFFFF" : "#809299"
+                                        text: modelData.name
+                                        color: (Theme.currentTheme === modelData.id) ? root.colTextPrimary : root.colTextSecondary
                                         font.pixelSize: 10
-                                        font.bold: (root.widgetVisibility[modelData.id] !== false)
-                                        elide: Text.ElideRight
-                                        width: parent.width - 20
+                                        font.bold: (Theme.currentTheme === modelData.id)
                                         font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
                                     }
                                 }
@@ -251,34 +253,152 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.toggleWidget(modelData.id)
+                                    onClicked: Theme.setTheme(modelData.id)
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                // Smooth Minimalist Scrollbar Indicator
-                Rectangle {
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.rightMargin: 2
-                    width: 3
-                    radius: 1.5
-                    color: "#15FFFFFF"
-                    visible: scrollFlick.contentHeight > scrollFlick.height
+            // Divider Line
+            Rectangle {
+                visible: root.isExpanded
+                width: parent.width
+                height: 1
+                color: "#15FFFFFF"
+            }
 
+            // ─── Widgets Header & Scrollable Toggle Grid ───
+            Column {
+                visible: root.isExpanded
+                width: parent.width
+                height: parent.height - 110
+                spacing: 6
+
+                Text {
+                    text: "TOGGLE WIDGETS"
+                    color: root.colTextSecondary
+                    font.pixelSize: 9
+                    font.bold: true
+                    font.letterSpacing: 1.0
+                    font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
+                }
+
+                Item {
+                    width: parent.width
+                    height: parent.height - 18
+                    clip: true
+
+                    Flickable {
+                        id: scrollFlick
+                        anchors.fill: parent
+                        contentWidth: width
+                        contentHeight: widgetGrid.implicitHeight + 10
+                        boundsBehavior: Flickable.StopAtBounds
+                        clip: true
+
+                        Grid {
+                            id: widgetGrid
+                            width: parent.width
+                            columns: 2
+                            spacing: 6
+
+                            Repeater {
+                                model: [
+                                    { id: "clock", label: "Clock" },
+                                    { id: "poster", label: "Poster" },
+                                    { id: "calendar", label: "Calendar" },
+                                    { id: "media", label: "Media Player" },
+                                    { id: "sysinfo", label: "System Info" },
+                                    { id: "battery", label: "Battery" },
+                                    { id: "weather", label: "Weather" },
+                                    { id: "quickcontrols", label: "Volume / Brightness" },
+                                    { id: "network", label: "Network" },
+                                    { id: "notes", label: "Notes" },
+                                    { id: "todo", label: "Tasks / Todo" },
+                                    { id: "timer", label: "Pomodoro Timer" },
+                                    { id: "thermal", label: "Hardware Thermals" },
+                                    { id: "quote", label: "Daily Quote" },
+                                    { id: "clipboard", label: "Clipboard" },
+                                    { id: "crypto", label: "Crypto Ticker" },
+                                    { id: "worldclock", label: "World Clock" },
+                                    { id: "git", label: "Git Dashboard" },
+                                    { id: "resourcewheel", label: "Resource Wheel" },
+                                    { id: "visualizer", label: "Audio Visualizer" },
+                                    { id: "habits", label: "Habit Tracker" },
+                                    { id: "ping", label: "Network Ping" },
+                                    { id: "storagemap", label: "Storage Map" },
+                                    { id: "calc", label: "Calculator" }
+                                ]
+
+                                Rectangle {
+                                    width: (widgetGrid.width - 6) / 2
+                                    height: 28
+                                    radius: 14
+                                    color: (root.widgetVisibility[modelData.id] !== false) ? root.colPillBg : "#12FFFFFF"
+                                    border.color: (root.widgetVisibility[modelData.id] !== false) ? root.colAccent : "#1AFFFFFF"
+                                    border.width: 1
+                                    antialiasing: true
+
+                                    Row {
+                                        anchors.fill: parent
+                                        anchors.margins: 6
+                                        spacing: 6
+
+                                        Rectangle {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: 6
+                                            height: 6
+                                            radius: 3
+                                            color: (root.widgetVisibility[modelData.id] !== false) ? root.colAccentGreen : "#667780"
+                                        }
+
+                                        Text {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: modelData.label
+                                            color: (root.widgetVisibility[modelData.id] !== false) ? root.colTextPrimary : root.colTextSecondary
+                                            font.pixelSize: 10
+                                            font.bold: (root.widgetVisibility[modelData.id] !== false)
+                                            elide: Text.ElideRight
+                                            width: parent.width - 20
+                                            font.family: "Google Sans Flex, Google Sans, Inter, sans-serif"
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.toggleWidget(modelData.id)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Smooth Minimalist Scrollbar Indicator
                     Rectangle {
-                        width: parent.width
-                        height: Math.max(20, (scrollFlick.height / scrollFlick.contentHeight) * scrollFlick.height)
-                        y: (scrollFlick.contentY / (scrollFlick.contentHeight - scrollFlick.height)) * (scrollFlick.height - height)
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.rightMargin: 2
+                        width: 3
                         radius: 1.5
-                        color: root.colAccent
-                        antialiasing: true
+                        color: "#15FFFFFF"
+                        visible: scrollFlick.contentHeight > scrollFlick.height
+
+                        Rectangle {
+                            width: parent.width
+                            height: Math.max(20, (scrollFlick.height / scrollFlick.contentHeight) * scrollFlick.height)
+                            y: (scrollFlick.contentY / (scrollFlick.contentHeight - scrollFlick.height)) * (scrollFlick.height - height)
+                            radius: 1.5
+                            color: root.colAccent
+                            antialiasing: true
+                        }
                     }
                 }
             }
         }
     }
+
 }

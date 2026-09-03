@@ -1,0 +1,26 @@
+singleton Theme 1.0 Theme.qml
+BatteryWidget 1.0 BatteryWidget.qml
+CalcWidget 1.0 CalcWidget.qml
+CalendarWidget 1.0 CalendarWidget.qml
+ClipboardWidget 1.0 ClipboardWidget.qml
+Clock 1.0 Clock.qml
+CryptoWidget 1.0 CryptoWidget.qml
+GitDashboardWidget 1.0 GitDashboardWidget.qml
+HabitsWidget 1.0 HabitsWidget.qml
+MediaWidget 1.0 MediaWidget.qml
+NetworkWidget 1.0 NetworkWidget.qml
+NotesWidget 1.0 NotesWidget.qml
+PingWidget 1.0 PingWidget.qml
+PosterWidget 1.0 PosterWidget.qml
+QuoteWidget 1.0 QuoteWidget.qml
+ResourceWheelWidget 1.0 ResourceWheelWidget.qml
+StorageMapWidget 1.0 StorageMapWidget.qml
+SystemInfo 1.0 SystemInfo.qml
+ThermalWidget 1.0 ThermalWidget.qml
+TimerWidget 1.0 TimerWidget.qml
+TodoWidget 1.0 TodoWidget.qml
+VisualizerWidget 1.0 VisualizerWidget.qml
+VolumeBrightnessWidget 1.0 VolumeBrightnessWidget.qml
+WeatherWidget 1.0 WeatherWidget.qml
+WidgetManager 1.0 WidgetManager.qml
+WorldClockWidget 1.0 WorldClockWidget.qml

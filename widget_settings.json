@@ -1,5 +1,6 @@
 {
   "manager": {
+    "theme": "liquid_glass",
     "visibility": {
       "clock": true,
       "poster": true,

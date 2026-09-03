@@ -54,14 +54,14 @@ Item {
         root.updateCalendar()
     }
 
-    // ─── Material Dark Slate Theme Palette ───
-    readonly property color colBg: "#3A454B"              // Dark Slate Main Card
-    readonly property color colBadgeBg: "#4D585F"         // Slate Pill Badge
-    readonly property color colTextPrimary: "#FFFFFF"
-    readonly property color colTextSecondary: "#B0BEC5"
-    readonly property color colTextMuted: "#6B7880"
-    readonly property color colTodayCircle: "#D1E8DA"      // Pastel Light Mint Today Highlight
-    readonly property color colTodayText: "#253338"
+    // ─── Theme Palette ───
+    readonly property color colBg: Theme.colBgTile
+    readonly property color colBadgeBg: Theme.colPillBg
+    readonly property color colTextPrimary: Theme.colTextPrimary
+    readonly property color colTextSecondary: Theme.colTextSecondary
+    readonly property color colTextMuted: Theme.isGlass ? "#88A5BA" : "#6B7880"
+    readonly property color colTodayCircle: Theme.colAccentGreen
+    readonly property color colTodayText: Theme.colBg
 
     property var todayDate: new Date()
     property string monthName: ""
@@ -132,12 +132,24 @@ Item {
         scale: root.scaleFactor
         transformOrigin: Item.TopLeft
 
-        // ─── Material 3 Android Dark Slate Calendar Card ───
+        // ─── Calendar Card ───
         Rectangle {
             anchors.fill: parent
             color: root.colBg
             radius: 32
+            border.color: Theme.borderColor
+            border.width: Theme.borderWidth
+            clip: true
             antialiasing: true
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 1.5
+                color: Theme.glassGloss
+                visible: Theme.isGlass
+            }
 
             Column {
                 anchors.fill: parent

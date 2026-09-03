@@ -92,14 +92,14 @@ Item {
         gitProc.running = true
     }
 
-    // Material 3 Palette
-    readonly property color colBg: "#232D33"
-    readonly property color colBadgeBg: "#303B42"
-    readonly property color colAccent: "#C2E7FF"
-    readonly property color colCleanGreen: "#A2C9C2"
-    readonly property color colDirtyAmber: "#FFE082"
-    readonly property color colTextPrimary: "#FFFFFF"
-    readonly property color colTextSecondary: "#9CA8AC"
+    // Theme Palette
+    readonly property color colBg: Theme.colBg
+    readonly property color colBadgeBg: Theme.colPillBg
+    readonly property color colAccent: Theme.colAccent
+    readonly property color colCleanGreen: Theme.colAccentGreen
+    readonly property color colDirtyAmber: Theme.colAccentWarning
+    readonly property color colTextPrimary: Theme.colTextPrimary
+    readonly property color colTextSecondary: Theme.colTextSecondary
 
     // ─── Scaled Visual Content ───
     Item {
@@ -140,9 +140,19 @@ Item {
             anchors.fill: parent
             color: root.colBg
             radius: 32
-            border.color: "#1FFFFFFF"
-            border.width: 1.5
+            border.color: Theme.borderColor
+            border.width: Theme.borderWidth
+            clip: true
             antialiasing: true
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 1.5
+                color: Theme.glassGloss
+                visible: Theme.isGlass
+            }
 
             Column {
                 anchors.fill: parent
